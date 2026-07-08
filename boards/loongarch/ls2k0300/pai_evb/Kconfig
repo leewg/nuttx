@@ -1,0 +1,161 @@
+#
+# boards/loongarch/ls2k0300/pai_evb/Kconfig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Configuration options for the PAI-EVB (LS2K0300) evaluation board
+#
+
+if ARCH_BOARD_LS2K0300_PAI_EVB
+
+menu "LS2K0300 Pai EVB Board Options"
+
+config PAI_EVB_HAVE_SERIAL
+	bool "Have UART Serial"
+	default y
+	---help---
+		Select this if the board has UART for serial console.
+
+config PAI_EVB_UART_INSTANCE
+	int "UART instance for serial console"
+	default 0
+	range 0 3
+	depends on PAI_EVB_HAVE_SERIAL
+	---help---
+		Select which UART instance (0-3) to use for serial console.
+		UART0: Primary debug console (115200 baud)
+		UART1-3: Additional serial interfaces
+
+config PAI_EVB_HAVE_LED
+	bool "Have LED"
+	default y
+	---help---
+		Select this if the board has on-board LED for status indication.
+		LED GPIO: Port 0, Pin 0
+
+config PAI_EVB_HAVE_BUTTON
+	bool "Have Button"
+	default y
+	---help---
+		Select this if the board has on-board button for user input.
+		Button GPIO: Port 0, Pin 1
+
+config PAI_EVB_HAVE_ETHERNET
+	bool "Have Ethernet"
+	default n
+	---help---
+		Select this if the board has Ethernet interface.
+		Note: Requires additional driver support.
+
+config PAI_EVB_HAVE_I2C
+	bool "Have I2C"
+	default y
+	---help---
+		Select this if the board has I2C interface.
+		I2C Clock: 100kHz
+		Base Address: 0x1fe20000
+
+config PAI_EVB_HAVE_SPI
+	bool "Have SPI"
+	default y
+	---help---
+		Select this if the board has SPI interface.
+		SPI Clock: 25MHz
+		Base Address: 0x1fee0000
+
+config PAI_EVB_HAVE_NAND
+	bool "Have NAND Flash"
+	default y
+	---help---
+		Select this if the board has NAND flash memory.
+		NAND Base Address: 0x1ffb0000
+		NAND Size: 256MB (typical)
+
+config PAI_EVB_NAND_BASE
+	hex "NAND Flash Base Address"
+	default 0x1ffb0000
+	depends on PAI_EVB_HAVE_NAND
+	---help---
+		Base address of NAND flash controller.
+
+config PAI_EVB_NAND_SIZE
+	hex "NAND Flash Size"
+	default 0x10000000
+	depends on PAI_EVB_HAVE_NAND
+	---help---
+		Total size of NAND flash memory (typically 256MB).
+
+config PAI_EVB_CLOCK_FREQ
+	int "Board Clock Frequency (Hz)"
+	default 800000000
+	---help---
+		PAI-EVB default clock frequency is 800MHz.
+		Typical range: 800MHz - 1.2GHz depending on board revision.
+
+menu "PAI-EVB Debug Options"
+
+config PAI_EVB_DEBUG_UART
+	bool "Debug UART"
+	default n
+	---help---
+		Enable UART debugging output.
+		Provides verbose debug messages on UART0.
+
+config PAI_EVB_DEBUG_TIMER
+	bool "Debug Timer"
+	default n
+	---help---
+		Enable timer debugging output.
+		Useful for timer interrupt debugging.
+
+config PAI_EVB_DEBUG_IRQ
+	bool "Debug IRQ"
+	default n
+	---help---
+		Enable IRQ debugging output.
+		Logs all interrupt and exception events.
+
+config PAI_EVB_DEBUG_GPIO
+	bool "Debug GPIO"
+	default n
+	---help---
+		Enable GPIO debugging output.
+		Logs GPIO configuration and state changes.
+
+config PAI_EVB_DEBUG_I2C
+	bool "Debug I2C"
+	default n
+	depends on PAI_EVB_HAVE_I2C
+	---help---
+		Enable I2C debugging output.
+
+config PAI_EVB_DEBUG_SPI
+	bool "Debug SPI"
+	default n
+	depends on PAI_EVB_HAVE_SPI
+	---help---
+		Enable SPI debugging output.
+
+endmenu # PAI-EVB Debug Options
+
+menu "PAI-EVB Performance Options"
+
+config PAI_EVB_CPU_FREQ_SCALING
+	bool "CPU Frequency Scaling"
+	default n
+	---help---
+		Enable dynamic CPU frequency scaling for power management.
+
+config PAI_EVB_CPU_BOOST
+	bool "CPU Turbo Boost"
+	default n
+	depends on !PAI_EVB_CPU_FREQ_SCALING
+	---help---
+		Enable CPU turbo boost mode (1.2GHz).
+		Note: Increases power consumption and heat generation.
+
+endmenu # PAI-EVB Performance Options
+
+endmenu # PAI-EVB Board Options
+
+endif # ARCH_BOARD_PAI_EVB

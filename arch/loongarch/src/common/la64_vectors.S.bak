@@ -1,0 +1,175 @@
+/****************************************************************************
+ * arch/loongarch/src/common/la64_vectors.S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+/****************************************************************************
+ * Included Files
+ ****************************************************************************/
+
+#include <nuttx/config.h>
+
+#include "arch/syscall.h"
+#include "arch/irq.h"
+#include "la64_internal.h"
+#include "la64_macros.h"
+#include "arch/csr.h"
+
+/****************************************************************************
+ * Public Symbols
+ ****************************************************************************/
+
+  .file "la64_vectors.S"
+
+  .text
+  .p2align  12
+  .global la64_vector_table
+  .global handle_syscall
+  .global handle_exception_generic
+  .global handle_vint
+  .global handle_fp_disabled
+
+  .extern exception_table
+  .extern interrupt_table
+  .extern la64_syscall_dispatch
+  .extern la64_exception_dispatch
+  .extern la64_interrupt_dispatch
+
+.macro BUILD_EX_VECTOR slot
+  .align 6
+la64_ex_vec_\slot:
+  csrwr t0, LOONGARCH_CSR_KS0
+  li.d  t0, \slot
+  b     exception_common_trampoline
+.endm
+
+.macro BUILD_INT_VECTOR slot
+  .align 6
+la64_int_vec_\slot:
+  csrwr t0, LOONGARCH_CSR_KS0
+  li.d  t0, (\slot - 64)
+  b interrupt_common_trampoline
+.endm
+
+.macro build_prep_badv
+  csrrd t0, LOONGARCH_CSR_BADV
+  st.d  t0, sp, REG_BADV
+.endm
+
+.macro build_prep_fcsr
+  movfcsr2gr  a1, fcsr0
+.endm
+
+.macro build_prep_none
+.endm
+
+.macro BUILD_HANDLER exception handler prep
+  .align 5
+  .global handle_\exception
+  .type handle_\exception, @function
+handle_\exception:
+  BACKUP_T0T1
+  SAVE_ALL
+  build_prep_\prep
+  move  a0, sp
+  la.abs  t0, do_\handler
+  jirl  ra, t0, 0
+  RESTORE_ALL_AND_RET
+  .size handle_\exception, .-handle_\exception
+.endm
+
+BUILD_HANDLER reserved reserved none
+
+SYM_FUNC_START(handle_syscall)
+  SAVE_ALL
+
+  /* ERA address (PC + 4), jump to next address(syscall occurred address) */
+  ld.d      t0, sp, (REG_ERA * 8)
+  addi.d    t0, t0, 4
+  st.d      t0, sp, (REG_ERA * 8)
+
+  move      a0, sp    /* a0 = regs */
+  la.abs    t0, la64_syscall_dispatch
+  jirl      ra, t0, 0
+SYM_FUNC_END(handle_syscall)
+
+la64_vector_exit:
+  move sp, a0
+
+  RESTORE_ALL_AND_RET
+
+handle_exception_generic:
+  SAVE_ALL
+
+  csrrd     t0, LOONGARCH_CSR_EUEN
+  bstrins.d t0, zero, 0, 0
+  csrwr     t0, LOONGARCH_CSR_EUEN
+
+  move      a0, sp
+  la.abs    t0, la64_exception_dispatch
+  jirl      ra, t0, 0
+  b         la64_vector_exit
+
+handle_vint:
+  SAVE_ALL
+
+  csrrd     t0, LOONGARCH_CSR_EUEN
+  bstrins.d t0, zero, 0, 0
+  csrwr     t0, LOONGARCH_CSR_EUEN
+
+  move      a0, sp
+  la.abs    t0, la64_interrupt_dispatch
+  jirl      ra, t0, 0
+  b         la64_vector_exit
+
+#ifdef CONFIG_ARCH_FPU
+handle_fp_disabled:
+  SAVE_ALL
+
+  csrrd t0, LOONGARCH_CSR_EUEN
+  ori   t0, t0, 1
+  csrwr t0, LOONGARCH_CSR_EUEN
+
+  move  a0, sp
+  la.abs    t0, la64_fpu_disable_dispatch
+  jirl  ra, t0, 0
+
+  la.abs    t0, la64_vector_exit
+  jirl  zero, t0, 0
+#endif
+
+/****************************************************************************
+ * Data Section (Interrupt Stack Space)
+ ****************************************************************************/
+
+#define STACK_ALLOC_SIZE (INT_STACK_SIZE * CONFIG_SMP_NCPUS)
+#if CONFIG_ARCH_INTERRUPTSTACK > 15
+  .section .bss
+  .balign 16
+  .global g_intstackalloc
+  .global g_intstacktop
+  .type   g_intstackalloc, object
+  .type   g_intstacktop, object
+g_intstackalloc:
+  .skip STACKFRAME_ALIGN_UP(STACK_ALLOC_SIZE)
+g_intstacktop:
+  .size g_intstacktop, 0
+  .size g_intstackalloc, STACKFRAME_ALIGN_DOWN(STACK_ALLOC_SIZE)
+#endif

@@ -1,0 +1,44 @@
+############################################################################
+# arch/loongarch/src/common/Make.defs
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.  The
+# ASF licenses this file to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance with the
+# License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+# License for the specific language governing permissions and limitations
+# under the License.
+#
+############################################################################
+
+STARTUP_OBJS = crt0$(OBJEXT)
+
+# Specify our general Assembly files
+#CMN_ASRCS += la64_exception.S
+CMN_ASRCS += la64_saveusercontext.S
+CMN_ASRCS += la64_vectors.S la64_tlb_refill.S la64_fatal.S
+
+# Specify C code within the common directory to be included
+CMN_CSRCS += la64_allocateheap.c la64_createstack.c la64_getintstack.c
+CMN_CSRCS += la64_initialize.c la64_initialstate.c
+CMN_CSRCS += la64_releasestack.c la64_stackframe.c la64_usestack.c
+CMN_CSRCS += la64_idle.c la64_exit.c la64_switchcontext.c
+CMN_CSRCS += la64_nputs.c la64_registerdump.c
+#CMN_CSRCS += la64_mtimer.c
+CMN_CSRCS += la64_stable_timer.c
+
+CMN_CSRCS += la64_exception.c la64_doirq.c
+CMN_CSRCS += la64_percpu.c
+
+CMN_CSRCS += la64_debug.c
+
+CMN_CSRCS += la64_sigdeliver.c la64_schedulesigaction.c

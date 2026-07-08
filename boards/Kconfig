@@ -3799,6 +3799,12 @@ config ARCH_BOARD_FRDM_MCXN236
 		This options selects support for NuttX on the NXP MCXN236 CPU EVK
 		board with ARM Cortex-M33.
 
+config ARCH_BOARD_LS2K0300_PAI_EVB
+    bool "LoongArch 2K0300 Pai EVB board"
+    depends on ARCH_CHIP_LS2K0300
+	---help---
+        Select this to build for the Loongson 2K0300 Evaluation Board.
+
 config ARCH_BOARD_CUSTOM
 	bool "Custom development board"
 	---help---
@@ -4269,6 +4275,7 @@ config ARCH_BOARD
 	default "csk6011a-nano"                if ARCH_BOARD_CSK6011A_NANO
 	default "frdm-mcxn236"                 if ARCH_BOARD_FRDM_MCXN236
 	default "devebox-stm32h743"            if ARCH_BOARD_DEVEBOX_STM32H743
+	default "pai_evb"                      if ARCH_BOARD_LS2K0300_PAI_EVB
 
 comment "Common Board Options"
 
@@ -5473,6 +5480,9 @@ source "boards/arm/mcx-nxxx/frdm-mcxn236/Kconfig"
 endif
 if ARCH_BOARD_RASPBERRYPI_PICO_2_RV
 source "boards/risc-v/rp23xx-rv/raspberrypi-pico-2-rv/Kconfig"
+endif
+if ARCH_BOARD_LS2K0300_PAI_EVB
+source "boards/loongarch/ls2k0300/pai_evb/Kconfig"
 endif
 
 comment "Board-Common Options"

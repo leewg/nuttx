@@ -1,0 +1,109 @@
+#
+# LoongArch Processor Configuration
+#
+
+if ARCH_LOONGARCH
+
+choice
+	prompt "LoongArch chip selection"
+	default ARCH_CHIP_LOONGARCH_CUSTOM
+
+config ARCH_CHIP_LS2K0300
+	bool "ls2k0300"
+	select ARCH_HAVE_INTERRUPTSTACK
+	select ARCH_HAVE_CUSTOMOPT
+    select ONESHOT
+    select ONESHOT_COUNT
+	---help---
+		Loongson 2K0300 single-core processor.
+		Frequency: typically 800MHz - 1.2GHz
+
+config ARCH_CHIP_LOONGARCH_CUSTOM
+    bool "Custom LoongArch chip"
+    select ARCH_CHIP_CUSTOM
+    ---help---
+       Select this option if there is no directory for the chip under arch/loongarch/src/. 
+
+endchoice   # LoongArch chip selection
+
+# Common LoongArch options
+
+config ARCH_HAVE_FPU
+	bool
+	default n
+	---help---
+		LS2K0300 does not support FPU.
+
+config RAM_START
+	hex "Start of RAM"
+	default 0x9000000000000000
+	---help---
+		The physical start address of usable RAM.
+
+config RAM_SIZE
+	hex "End of RAM"
+	default 0x10000000
+	---help---
+		The physical end address of usable RAM(256MB).
+
+config ARCH_TEXT_BASE
+    hex "Start address of kernel is loaded"
+    default 0x9000000000200000
+    ---help---
+        Physical start address where kernel is loaded.
+        For LS2K0300 with PMON/U-Boot, typical value is 0x9000000000200000.
+
+config ARCH_HEAP_SIZE
+	hex "Heap Size"
+	default 0x04000000
+	---help---
+		Size of heap memory (64MB default).
+		Adjust based on application requirements.
+
+config ARCH_STACK_SIZE
+	hex "Stack Size"
+	default 0x01000000
+	---help---
+		Size of stack memory (16MB default).
+		Includes idle thread stack and interrupt stack.
+
+config ARCH_INTERRUPTSTACK
+	int "Interrupt stack size"
+	default 4096
+	---help---
+		Size of the interrupt stack for LS2K0300.
+
+config LS2K0300_UART_BASEADDR
+	hex "UART Base Address"
+	default 0x1fe00000
+	---help---
+		Base address of UART for LS2K0300.
+		Default is the SuperIO base address.
+
+config LS2K0300_TIMER_FREQ
+	int "Timer Frequency (Hz)"
+	default 800000000
+	---help---
+		LS2K0300 timer frequency in Hz.
+
+if !BARE_METAL
+
+config PREALLOC_TIMERS
+	int "Number of pre-allocated timers"
+	default 4
+
+config PREALLOC_WDOGS
+	int "Number of pre-allocated watchdog timers"
+	default 2
+
+endif
+
+config ARCH_CHIP
+    string
+    default "ls2k0300"      if ARCH_CHIP_LS2K0300
+
+if ARCH_CHIP_LS2K0300
+source "arch/loongarch/src/ls2k0300/Kconfig"
+endif
+
+endif   # ARCH_LOONGARCH

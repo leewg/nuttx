@@ -1,0 +1,118 @@
+/****************************************************************************
+ * boards/loongarch/ls2k0300/pai_evb/scripts/ld.script
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.  The
+ * ASF licenses this file to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance with the
+ * License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
+ * License for the specific language governing permissions and limitations
+ * under the License.
+ *
+ ****************************************************************************/
+
+OUTPUT_ARCH("loongarch")
+OUTPUT_FORMAT("elf64-loongarch")
+ENTRY(__start)
+
+MEMORY
+{
+  ram (rwx) : ORIGIN = 0x9000000000200000, LENGTH = 0x10000000
+}
+
+SECTIONS
+{
+  .text :
+  {
+    _stext = .;
+
+    KEEP(*(.text.start))
+    *(.text .text.*)
+    *(.stub)
+    *(.gnu.linkonce.t.*)
+    *(.gnu.warning)
+
+    . = ALIGN(16);
+    _etext = .;
+  } > ram
+
+  .init_section :
+  {
+    . = ALIGN(16);
+    _sinit = .;
+    KEEP(*(.init_array .init_array.*))
+    KEEP(*(.ctors))
+    . = ALIGN(16);
+    _einit = .;
+  } > ram
+
+  /* Read-only data (constants, strings) */
+  .rodata :
+  {
+    . = ALIGN(16);
+    _srodata = .;
+    *(.rodata .rodata.*)
+    *(.gnu.linkonce.r.*)
+    . = ALIGN(16);
+    _erodata = .;
+  } > ram
+
+  _eronly = .;
+
+  /* Data section: initialised data, will be copied from ROM if needed */
+  .data :
+  {
+    . = ALIGN(16);
+    _sdata = .;
+    *(.data .data.*)
+    *(.gnu.linkonce.d.*)
+    *(.data.rel.ro)
+    *(.data.rel.ro.*)
+    . = ALIGN(16);
+    _edata = .;
+  } > ram
+
+  /* BSS: uninitialised data, zeroed at startup */
+  .bss :
+  {
+    . = ALIGN(16);
+    _sbss = .;
+    *(.bss .bss.*)
+    *(.gnu.linkonce.b.*)
+    *(COMMON)
+    . = ALIGN(16);
+    _ebss = .;
+  } > ram
+
+  /* image end symbal, IDLE thread stack will grow upward from this address */
+  _end = .;
+
+  /*
+  .initstack :
+  {
+    _s_initstack = .;
+    *(.initstack)
+  } > ram
+
+  . = ALIGN(4096);
+
+  g_idle_topstack = .;
+  _e_initstack = .;
+  */
+
+  /DISCARD/ :
+  {
+    *(.note.GNU-stack)
+    *(.gnu.attributes)
+    *(.comment)
+  }
+}
