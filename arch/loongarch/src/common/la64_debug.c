@@ -69,9 +69,9 @@ static inline uint32_t la64_read_iocsr32(uint32_t addr)
 void dump_loongarch_interrupt_info(void)
 {
   /* 1. 读取 CSR 寄存器原始值 */
-  uint64_t crmd  = la64_read_csr(LOONGARCH_CSR_CRMD);
-  uint64_t ecfg  = la64_read_csr(LOONGARCH_CSR_ECFG);
-  uint64_t estat = la64_read_csr(LOONGARCH_CSR_ESTAT);
+  uint64_t crmd  = la64_read_csr(LA_CSR_CRMD);
+  uint64_t ecfg  = la64_read_csr(LA_CSR_ECFG);
+  uint64_t estat = la64_read_csr(LA_CSR_ESTAT);
 
   /* 2. 解析核心位域 */
   uint8_t  crmd_ie  = (crmd & CRMD_IE_MASK) >> CRMD_IE_SHIFT;

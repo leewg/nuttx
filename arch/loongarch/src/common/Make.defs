@@ -33,7 +33,6 @@ CMN_CSRCS += la64_initialize.c la64_initialstate.c
 CMN_CSRCS += la64_releasestack.c la64_stackframe.c la64_usestack.c
 CMN_CSRCS += la64_idle.c la64_exit.c la64_switchcontext.c
 CMN_CSRCS += la64_nputs.c la64_registerdump.c
-#CMN_CSRCS += la64_mtimer.c
 CMN_CSRCS += la64_stable_timer.c
 
 CMN_CSRCS += la64_exception.c la64_doirq.c

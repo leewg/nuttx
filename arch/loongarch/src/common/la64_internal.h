@@ -123,7 +123,12 @@ static inline void putreg64(uint64_t val, const volatile uintreg_t addr)
 {
     *(volatile uint64_t *)TO_UNCAC(addr) = val;
 }
+
+/* Linker defined symbols */
+extern uint8_t _end;
+
 #endif // __ASSEMBLY
+
 
 #define _START_TEXT  _stext
 #define _END_TEXT    _etext

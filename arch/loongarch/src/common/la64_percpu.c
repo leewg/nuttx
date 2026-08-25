@@ -53,11 +53,11 @@ void up_percpu_initialize(int cpu)
 
   percpu->cur_regs = 0;
 
-#if CONFIG_ARCH_INTERRUPTSTACK > 0
-  percpu->irq_stack = (uintptr_t)g_intstackalloc[cpu] + CONFIG_ARCH_INTERRUPTSTACK;
+#if CONFIG_ARCH_INTERRUPTSTACK > 15
+  percpu->irq_stack = (uintptr_t)g_intstackalloc[cpu] + INT_STACK_SIZE;
   percpu->irq_stack &= ~0xf;
 #else
-  percpu->irq_stack = 0;
+  percpu->irq_stack = g_intstackallc[0] + INT_STACK_SIZE;
 #endif
 
 #if CONFIG_SMP_NCPUS > 1

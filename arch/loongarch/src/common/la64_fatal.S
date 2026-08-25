@@ -58,9 +58,9 @@ la64_machine_check_entry:
 
     SAVE_ALL
 
-    csrrd   a0, LOONGARCH_CSR_ESTAT
-    csrrd   a1, LOONGARCH_CSR_ERA
-    csrrd   a2, LOONGARCH_CSR_BADV
+    csrrd   a0, LA_CSR_ESTAT
+    csrrd   a1, LA_CSR_ERA
+    csrrd   a2, LA_CSR_BADV
     move    a3, sp
 
     bl  la64_fatal_handler

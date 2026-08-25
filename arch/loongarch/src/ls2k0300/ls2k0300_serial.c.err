@@ -108,10 +108,10 @@ struct up_dev_s
 
 /* Low-level helpers */
 
-static uint32_t la64_serialin(struct up_dev_s *priv, int offset);
-static void la64_serialout(struct up_dev_s *priv, int offset, uint32_t value);
-static void la64_restore_uartint(struct up_dev_s *priv, uint8_t im);
-static void la64_disable_uartint(struct up_dev_s *priv, uint8_t *im);
+static uint32_t up_serialin(struct up_dev_s *priv, int offset);
+static void up_serialout(struct up_dev_s *priv, int offset, uint32_t value);
+static void up_restoreuartint(struct up_dev_s *priv, uint8_t im);
+static void up_disableuartint(struct up_dev_s *priv, uint8_t *im);
 
 /* Serial driver methods */
 
@@ -158,7 +158,9 @@ static const struct uart_ops_s g_uart_ops =
 static char g_uart0rxbuffer[CONFIG_UART0_RXBUFSIZE];
 static char g_uart0txbuffer[CONFIG_UART0_TXBUFSIZE];
 static uint32_t g_rxdata;
+#endif
 
+#ifdef CONFIG_LS2K0300_UART0
 static struct up_dev_s g_uart0priv =
 {
   .uartbase  = UART0_BASE,
@@ -191,72 +193,58 @@ static uart_dev_t g_uart0port =
  * Private Functions
  ****************************************************************************/
 
-static uint32_t la64_serialin(struct up_dev_s *priv, int offset)
+/****************************************************************************
+ * Name: up_serialin
+ ****************************************************************************/
+
+static uint32_t up_serialin(struct up_dev_s *priv, int offset)
 {
   return getreg8(priv->uartbase + offset);
 }
 
-static void la64_serialout(struct up_dev_s *priv, int offset, uint32_t value)
+/****************************************************************************
+ * Name: up_serialout
+ ****************************************************************************/
+
+static void up_serialout(struct up_dev_s *priv, int offset, uint32_t value)
 {
   putreg8(value, priv->uartbase + offset);
 }
 
-static void la64_restore_uartint(struct up_dev_s *priv, uint8_t im)
+/****************************************************************************
+ * Name: up_restoreuartint
+ ****************************************************************************/
+
+static void up_restoreuartint(struct up_dev_s *priv, uint8_t im)
 {
   irqstate_t flags = spin_lock_irqsave(&priv->lock);
 
   priv->im = im;
-  la64_serialout(priv, UART_IER, im);
+  up_serialout(priv, UART_IER, im);
 
   spin_unlock_irqrestore(&priv->lock, flags);
 }
 
-static void la64_disable_uartint(struct up_dev_s *priv, uint8_t *im)
+/****************************************************************************
+ * Name: up_disableuartint
+ ****************************************************************************/
+
+static void up_disableuartint(struct up_dev_s *priv, uint8_t *im)
 {
   irqstate_t flags = spin_lock_irqsave(&priv->lock);
 
   /* Return the current interrupt mask value */
 
   if (im)
-  {
-    *im = priv->im;
-  }
+    {
+     *im = priv->im;
+    }
 
   /* Disable all interrupts */
 
   priv->im = 0;
-  la64_serialout(priv, UART_IER, 0);
+  up_serialout(priv, UART_IER, 0);
   spin_unlock_irqrestore(&priv->lock, flags);
-}
-
-/****************************************************************************
- * Name: la64_serial_init
- ****************************************************************************/
-
-static void la64_serial_init(struct uart_dev_s *dev)
-{
-  struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-  uint64_t apb_clock = 125000000; //uart use apb clock, 125Mhz default
-  uint64_t brtc;
-  unsigned char cfg;
-
-  la64_serialout(priv, UART_IER, 0x0);
-
-  /* set baud rate */
-  brtc = apb_clock / (16 * (priv->baud));
-
-  cfg = la64_serialin(priv, UART_LCR);
-  la64_serialout(priv, UART_LCR, cfg | UART_LCR_DLAB);
-
-  la64_serialout(priv, UART_DLH, (brtc&0xff));
-  la64_serialout(priv, UART_DLL, ((brtc>>8)&0xff));
-
-  la64_serialout(priv, UART_LCR, cfg & ~UART_LCR_DLAB);
-
-  /* reset FIFO */
-  la64_serialout(priv, UART_FCR, 0x01 | UART_FCR_TXSET | UART_FCR_RXSET);
-
-  la64_serialout(priv, UART_LCR, cfg | UART_LCR_WLS_8);
 }
 
 /****************************************************************************
@@ -272,10 +260,10 @@ static int up_setup(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
-  la64_serial_init(dev);
-
   /* Enable RX */
-  la64_serialout(priv, UART_IER, UART_IER_IRxE | UART_IER_ILE);
+
+  up_serialout(priv, UART_IER,
+               UART_IER_IRxE | UART_IER_ILE);
 
   return OK;
 }
@@ -295,7 +283,7 @@ static void up_shutdown(struct uart_dev_s *dev)
 
   /* Disable interrupts */
 
-  la64_disable_uartint(priv, NULL);
+  up_disableuartint(priv, NULL);
 }
 
 /****************************************************************************
@@ -320,18 +308,18 @@ static int up_attach(struct uart_dev_s *dev)
 
   /* Initialize interrupt generation on the peripheral */
 
-  la64_serialout(priv, UART_IER, UART_IER_IRxE | UART_IER_ITxE);
+  up_serialout(priv, UART_IER, UART_IER_IRxE | UART_IER_ITxE);
 
   ret = irq_attach(priv->irq, up_interrupt, dev);
 
   if (ret == OK)
-  {
-    /* Enable the interrupt (RX and TX interrupts are still disabled
-     * in the UART
-     */
+    {
+      /* Enable the interrupt (RX and TX interrupts are still disabled
+       * in the UART
+       */
 
-    up_enable_irq(priv->irq);
-  }
+      up_enable_irq(priv->irq);
+    }
 
   return ret;
 }
@@ -389,7 +377,7 @@ static int up_interrupt(int irq, void *context, void *arg)
     {
       /* Retrieve interrupt pending status */
 
-      status = la64_serialin(priv, UART_IIR);
+      status = up_serialin(priv, UART_IIR);
 
       if (status == 0)
         {
@@ -474,7 +462,7 @@ static void up_rxint(struct uart_dev_s *dev, bool enable)
       priv->im &= ~UART_IER_IRxE;
     }
 
-  la64_serialout(priv, UART_IER, priv->im);
+  up_serialout(priv, UART_IER, priv->im);
   leave_critical_section(flags);
 }
 
@@ -493,11 +481,11 @@ static bool up_rxavailable(struct uart_dev_s *dev)
 
   /* Return true is data is available in the receive data buffer */
 
-  uint32_t rxdata = la64_serialin(priv, UART_RBR);
+  uint32_t rxdata = up_serialin(priv, UART_RBR);
 
   g_rxdata = rxdata & 0xff;
 
-  dr = la64_serialin(priv, UART_LSR) & UART_LSR_DR;
+  dr = up_serialin(priv, UART_LSR) & UART_LSR_DR;
 
   return !!dr;
 }
@@ -513,7 +501,7 @@ static bool up_rxavailable(struct uart_dev_s *dev)
 static void up_send(struct uart_dev_s *dev, int ch)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-  la64_serialout(priv, UART_THR, (uint32_t)ch);
+  up_serialout(priv, UART_THR, (uint32_t)ch);
 }
 
 /****************************************************************************
@@ -536,7 +524,7 @@ static void up_txint(struct uart_dev_s *dev, bool enable)
 
 #ifndef CONFIG_SUPPRESS_SERIAL_INTS
       priv->im |= UART_IER_ITxE;
-      la64_serialout(priv, UART_IER, priv->im);
+      up_serialout(priv, UART_IER, priv->im);
 
       /* Fake a TX interrupt here by just calling uart_xmitchars() with
        * interrupts disabled (note this may recurse).
@@ -550,7 +538,7 @@ static void up_txint(struct uart_dev_s *dev, bool enable)
       /* Disable the TX interrupt */
 
       priv->im &= ~UART_IER_ITxE;
-      la64_serialout(priv, UART_IER, priv->im);
+      up_serialout(priv, UART_IER, priv->im);
     }
 
   leave_critical_section(flags);
@@ -570,7 +558,7 @@ static bool up_txready(struct uart_dev_s *dev)
 
   /* Return TRUE if the TX FIFO is not full */
 
-  return !!(la64_serialin(priv, UART_LSR) & UART_LSR_TFE);
+  return !!(up_serialin(priv, UART_LSR) & UART_LSR_THRE);
 }
 
 /****************************************************************************
@@ -584,16 +572,10 @@ static bool up_txready(struct uart_dev_s *dev)
 static bool up_txempty(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-  uint8_t status = la64_serialin(priv, UART_LSR);
 
-  if (status & (UART_LSR_TE | UART_LSR_TFE))
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  /* Return TRUE if the TX wartermak is pending */
+
+  return !!(up_serialin(priv, UART_LSR) & UART_LSR_THRE);
 }
 
 /****************************************************************************
@@ -620,9 +602,9 @@ void la64_earlyserialinit(void)
    * la64_consoleinit().
    */
 
-  la64_disable_uartint(TTYS0_DEV.priv, NULL);
+  up_disableuartint(TTYS0_DEV.priv, NULL);
 #ifdef TTYS1_DEV
-  la64_disable_uartint(TTYS1_DEV.priv, NULL);
+  up_disableuartint(TTYS1_DEV.priv, NULL);
 #endif
 
   /* Configuration whichever one is the console */
@@ -645,6 +627,7 @@ void la64_earlyserialinit(void)
 
 void la64_serialinit(void)
 {
+  int i;
   /* Register the console */
 
 #ifdef HAVE_SERIAL_CONSOLE
@@ -673,14 +656,37 @@ void up_putc(int ch)
   struct up_dev_s *priv = (struct up_dev_s *)CONSOLE_DEV.priv;
   uint8_t imr;
 
-  la64_disable_uartint(priv, &imr);
+  up_disableuartint(priv, &imr);
   la64_lowputc(ch);
-  la64_restore_uartint(priv, imr);
+  up_restoreuartint(priv, imr);
 #endif
 }
 
-#endif /* HAVE_UART_DEVICE */
+/****************************************************************************
+ * Name: la64_earlyserialinit, la64_serialinit, and up_putc
+ *
+ * Description:
+ *   stubs that may be needed.  These stubs would be used if all UARTs are
+ *   disabled.  In that case, the logic in common/up_initialize() is not
+ *   smart enough to know that there are not UARTs and will still expect
+ *   these interfaces to be provided.
+ *
+ ****************************************************************************/
 
+#else /* HAVE_UART_DEVICE */
+void la64_earlyserialinit(void)
+{
+}
+
+void la64_serialinit(void)
+{
+}
+
+void up_putc(int ch)
+{
+}
+
+#endif /* HAVE_UART_DEVICE */
 #else /* USE_SERIALDRIVER */
 
 /****************************************************************************
@@ -716,13 +722,11 @@ void la64_lowputc(char ch)
 void la64_lowsetup(void)
 {
   /* UART0 initiaze */
-  writeb(UART_LCR_DLAB, UART0_BASE + UART_LCR);
+  writeb(0x80, UART0_BASE + 0x3);
 
-  writeb(UART_DIV_HI, UART0_BASE + UART_DLH);
-  writeb(UART_DIV_LO, UART0_BASE + UART_DLL);
+  writeb(UART_DIV_HI, UART0_BASE + 0x1);
+  writeb(UART_DIV_LO, UART0_BASE + 0x0);
 
-  writeb(0x03, UART0_BASE + UART_LCR);
+  writeb(0x3, UART0_BASE + 0x3);
   writeb(71, UART0_BASE + 0x2);
 }
-
-

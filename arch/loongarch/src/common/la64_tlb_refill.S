@@ -49,18 +49,18 @@
   .type   la64_tlb_refill_entry, @function
 
 la64_tlb_refill_entry:
-    csrwr   a0, LOONGARCH_CSR_TLBRSAVE
-    csrwr   a1, LOONGARCH_CSR_KS0
-    csrwr   a2, LOONGARCH_CSR_KS1
+    csrwr   a0, LA_CSR_TLBRSAVE
+    csrwr   a1, LA_CSR_KS0
+    csrwr   a2, LA_CSR_KS1
 
     /* get tlb miss orig vaddr */
-    csrrd   a0, LOONGARCH_CSR_BADV
+    csrrd   a0, LA_CSR_BADV
 
     /* TODO */
 
     /* retore */
-    csrrd   a2, LOONGARCH_CSR_KS1
-    csrrd   a1, LOONGARCH_CSR_KS0
-    csrrd   a0, LOONGARCH_CSR_TLBRSAVE
+    csrrd   a2, LA_CSR_KS1
+    csrrd   a1, LA_CSR_KS0
+    csrrd   a0, LA_CSR_TLBRSAVE
 
     ertn

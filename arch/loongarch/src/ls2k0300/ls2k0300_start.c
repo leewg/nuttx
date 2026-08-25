@@ -130,23 +130,23 @@ void __ls2k0300_start(void)
 
   loongarch_mem_verify();
 
-  syslog(LOG_INFO, "  LOONGARCH_CSR_CRMD: 0x%016" PRIxPTR "\n",
-      csr_read64(LOONGARCH_CSR_CRMD));
-  syslog(LOG_INFO, "  LOONGARCH_CSR_PRMD: 0x%016" PRIxPTR "\n",
-      csr_read64(LOONGARCH_CSR_PRMD));
-  syslog(LOG_INFO, "  LOONGARCH_CSR_ECFG: 0x%016" PRIxPTR "\n",
-      csr_read64(LOONGARCH_CSR_ECFG));
-  syslog(LOG_INFO, "  LOONGARCH_CSR_ESTAT: 0x%016" PRIxPTR "\n",
-      csr_read64(LOONGARCH_CSR_ESTAT));
-  syslog(LOG_INFO, "  LOONGARCH_CSR_TID: 0x%016" PRIxPTR "\n",
-      csr_read64(LOONGARCH_CSR_TMID));
+  syslog(LOG_INFO, "  LA_CSR_CRMD: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_CRMD));
+  syslog(LOG_INFO, "  LA_CSR_PRMD: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_PRMD));
+  syslog(LOG_INFO, "  LA_CSR_ECFG: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_ECFG));
+  syslog(LOG_INFO, "  LA_CSR_ESTAT: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_ESTAT));
+  syslog(LOG_INFO, "  LA_CSR_TID: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_TMID));
 
-  syslog(LOG_INFO, "  LOONGARCH_CSR_EENTRY: 0x%016" PRIxPTR "\n",
-      csr_read64(LOONGARCH_CSR_EENTRY));
-  syslog(LOG_INFO, "  LOONGARCH_CSR_TLBRENTRY: 0x%016" PRIxPTR "\n",
-      csr_read64(LOONGARCH_CSR_TLBRENTRY));
-  syslog(LOG_INFO, "  LOONGARCH_CSR_MERRENTRY: 0x%016" PRIxPTR "\n",
-      csr_read64(LOONGARCH_CSR_MERRENTRY));
+  syslog(LOG_INFO, "  LA_CSR_EENTRY: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_EENTRY));
+  syslog(LOG_INFO, "  LA_CSR_TLBRENTRY: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_TLBRENTRY));
+  syslog(LOG_INFO, "  LA_CSR_MERRENTRY: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_MERRENTRY));
 
   /* Call nx_start() */
   nx_start();

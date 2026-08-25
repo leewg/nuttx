@@ -78,8 +78,6 @@ static unsigned int hda_1us_cnt = 30;
 
 static int la64_timer_interrupt(int irq, void *context, void *arg)
 {
-  up_putc('@');
-
   /* Process timer interrupt */
 
   nxsched_process_timer();
@@ -112,14 +110,14 @@ void up_timer_initialize(void)
 
   irq_attach(LA_LOC_IRQ_BASE + INT_TI, la64_timer_interrupt, NULL);
 
-  csr_write64(0, LOONGARCH_CSR_TVAL);
-  csr_write64(0, LOONGARCH_CSR_CNTC);
+  csr_write64(0, LA_CSR_TVAL);
+  csr_write64(0, LA_CSR_CNTC);
 
   {
     unsigned long mcsr2;
     unsigned int mul, div;
 
-    mcsr2 = csr_read64(LOONGARCH_CSR_MCSR2);
+    mcsr2 = csr_read64(LA_CSR_MCSR2);
     hda_freq = (unsigned int)(mcsr2 & MCSR2_CCFREQ);
     mul = mcsr2 & MCSR2_CCMUL;
     div = mcsr2 & MCSR2_CCDIV;
@@ -135,7 +133,7 @@ void up_timer_initialize(void)
   tcfg <<= CSR_TCFG_VAL_SHIFT;
   tcfg |= CSR_TCFG_EN | CSR_TCFG_PERIOD;
 
-  csr_write64(tcfg, LOONGARCH_CSR_TCFG);
+  csr_write64(tcfg, LA_CSR_TCFG);
 
   /* Enable the allocated CPU interrupt. */
   up_enable_irq(LA_LOC_IRQ_BASE + INT_TI);

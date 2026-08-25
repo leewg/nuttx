@@ -112,14 +112,16 @@ void up_irqinitialize(void)
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
 
   /* And finally, enable interrupts */
-  putreg32(0xff, INTC_BASE + LS2K0300_EXTIOI_IEN0);
-  putreg32(0xe, INTC_BASE + LS2K0300_EXTIOI_IEN1);
+  putreg32(0xf, INTC_BASE + LS2K0300_EXTIOI_IEN0);
+  //putreg32(0xe, INTC_BASE + LS2K0300_EXTIOI_IEN1);
   //putreg32(0xb000000e, INTC_BASE + LS2K0300_EXTIOI_IEN1);
   //putreg32(0x3f, INTC_BASE + LS2K0300_EXTIOI_IEN2);
 
   //la64_color_intstack();
   up_irq_enable();
 #endif
+
+  up_irq_enable();
 }
 
 /****************************************************************************

@@ -41,7 +41,6 @@ list(APPEND SRCS la64_idle.c)
 list(APPEND SRCS la64_sigdeliver.c la64_schedulesigaction.c)
 
 list(APPEND SRCS la64_allocateheap.c )
-#list(APPEND SRCS la64_mtimer.c)
 list(APPEND SRCS la64_stable_timer.c)
 
 list(APPEND SRCS la64_debug.c)

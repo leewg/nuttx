@@ -10,6 +10,7 @@
 #include <arch/csr.h>
 #include <arch/irq.h>
 #include <arch/ls2k0300/chip.h>
+#include "la64_percpu.h"
 
 #define TTYDBG(x)  \
   .section .rodata;98: .asciz x; .text; la a0, 98b; bl stringserial
@@ -158,16 +159,16 @@ _start:
 
   /* Disable global interrupt */
   li.d  t0, CSR_CRMD_IE
-  csrxchg zero, t0, LOONGARCH_CSR_CRMD
+  csrxchg zero, t0, LA_CSR_CRMD
 
   /* set interrupt mask 0x1fff */
-  csrrd   t0, LOONGARCH_CSR_ECFG
+  csrrd   t0, LA_CSR_ECFG
   li.w    t1, CSR_ECFG_IM
   or      t0, t0, t1
-  csrwr   t0, LOONGARCH_CSR_ECFG
+  csrwr   t0, LA_CSR_ECFG
 
   /* disable tick interrupt */
-  csrwr zero, LOONGARCH_CSR_TCFG
+  csrwr zero, LA_CSR_TCFG
 
   /* disable all device interrupts */
   li.d  t5, TO_UNCAC(0x16001400)
@@ -190,12 +191,7 @@ _start:
   b     1b
 2:
   /* Initialize stack pointer (already done by bootloader, but ensure it) */
-  la.global  t0, _ebss
-  li.d  t1, CONFIG_IDLETHREAD_STACKSIZE
-  add.d sp, t0, t1
-
-  la.global t0, g_idle_topstack
-  st.d  sp, t0, 0
+  la.abs sp, g_idle_topstack
 
   /* GPIO aux to UART0 */
   li.d  t0, TO_UNCAC(0x16000498)
@@ -211,8 +207,8 @@ _start:
 
   bl  __ls2k0300_start
 
-3:
-  b 3b
-  .end __start
+9:
+  b   9b
 
+  .end __start
   .size __start, . - __start

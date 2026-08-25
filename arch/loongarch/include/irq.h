@@ -73,14 +73,17 @@
 #define INT_AVEC    14
 
 /* Interrupts */
-#define LA_LOC_IRQ_BASE  64
+#define LA_LOC_IRQ_BASE  0
 #define LA_IRQ_SWI0 0
 #define LA_IRQ_SWI1 1
 #define LA_IRQ_HWI2 4
 #define LA_IRQ_TIMER  12
-#define LA_EXT_IRQ_BASE  96
+#define LA_EXT_IRQ_BASE  16
 
 /* Register definitions (indices into exception context regs array) */
+#define INT_REG_WIDTH   8
+#define FPU_REG_WIDTH   8
+
 #define REG_R0   (0)
 #define REG_R1   (1)
 #define REG_R2   (2)
@@ -113,52 +116,57 @@
 #define REG_R29  (29)
 #define REG_R30  (30)
 #define REG_R31  (31)
-
 /* Saved special registers */
-#define REG_CRMD    (32) /* Thread switch */
-#define REG_PRMD    (33) /* save these */
-#define REG_EUEN    (34) /* FPU */
-#define REG_ESTAT   (35) /* IP status, ECODE */
-#define REG_ERA     (36) /* Exception Return Addr */
-#define REG_ECFG    (37) /* IP enable */
-#define REG_BADV    (38) /* Bad Vaddr */
+#define CSR_CRMD    (32) /* Thread switch */
+#define CSR_PRMD    (33) /* save these */
+#define CSR_EUEN    (34) /* FPU */
+#define CSR_ESTAT   (35) /* IP status, ECODE */
+#define CSR_ERA     (36) /* Exception Return Addr */
+#define CSR_ECFG    (37) /* IP enable */
+#define CSR_BADV    (38) /* Bad Vaddr */
 
-#define REG_ZERO  (REG_R0  * 8)     /* $0  - Always zero */
-#define REG_RA    (REG_R1  * 8)     /* $1  - Return address */
-#define REG_TP    (REG_R2  * 8)     /* $2  - Stack pointer */
-#define REG_SP    (REG_R3  * 8)     /* $3  - Global pointer */
-#define REG_A0    (REG_R4  * 8)     /* $4  - Thread pointer */
-#define REG_A1    (REG_R5  * 8)     /* $5  - Argument/Return 0 */
-#define REG_A2    (REG_R6  * 8)     /* $6  - Argument/Return 1 */
-#define REG_A3    (REG_R7  * 8)     /* $7  - Argument 2 */
-#define REG_A4    (REG_R8  * 8)     /* $8  - Argument 3 */
-#define REG_A5    (REG_R9  * 8)     /* $9  - Argument 4 */
-#define REG_A6    (REG_R10 * 8)    /* $10 - Argument 5 */
-#define REG_A7    (REG_R11 * 8)    /* $11 - Argument 6 */
-#define REG_T0    (REG_R12 * 8)    /* $12 - Argument 7 */
-#define REG_T1    (REG_R13 * 8)    /* $13 - Temporary 0 */
-#define REG_T2    (REG_R14 * 8)    /* $14 - Temporary 1 */
-#define REG_T3    (REG_R15 * 8)    /* $15 - Temporary 2 */
-#define REG_T4    (REG_R16 * 8)    /* $16 - Temporary 3 */
-#define REG_T5    (REG_R17 * 8)    /* $17 - Temporary 4 */
-#define REG_T6    (REG_R18 * 8)    /* $18 - Temporary 5 */
-#define REG_T7    (REG_R19 * 8)    /* $19 - Temporary 6 */
-#define REG_T8    (REG_R20 * 8)    /* $20 - Temporary 7 */
-#define REG_U0    (REG_R21 * 8)    /* $21 - Temporary 8 */
-#define REG_FP    (REG_R22 * 8)    /* $22 - Reserved (nomips16) */
-#define REG_S0    (REG_R23 * 8)    /* $23 - Frame pointer */
-#define REG_S1    (REG_R24 * 8)    /* $24 - Saved 0 */
-#define REG_S2    (REG_R25 * 8)    /* $25 - Saved 1 */
-#define REG_S3    (REG_R26 * 8)    /* $26 - Saved 2 */
-#define REG_S4    (REG_R27 * 8)    /* $27 - Saved 3 */
-#define REG_S5    (REG_R28 * 8)    /* $28 - Saved 4 */
-#define REG_S6    (REG_R29 * 8)    /* $29 - Saved 5 */
-#define REG_S7    (REG_R30 * 8)    /* $30 - Saved 6 */
-#define REG_S8    (REG_R31 * 8)    /* $31 - Saved 7 */
-
-/* Interrupt Context register */
 #define INT_XCPT_REGS    (40)
-#define INT_XCPT_SIZE    (8 * INT_XCPT_REGS)
+
+#define TP_ZERO  (REG_R0  * INT_REG_WIDTH)     /* $0  - Always zero */
+#define TP_RA    (REG_R1  * INT_REG_WIDTH)     /* $1  - Return address */
+#define TP_TP    (REG_R2  * INT_REG_WIDTH)     /* $2  - Stack pointer */
+#define TP_SP    (REG_R3  * INT_REG_WIDTH)     /* $3  - Global pointer */
+#define TP_A0    (REG_R4  * INT_REG_WIDTH)     /* $4  - Thread pointer */
+#define TP_A1    (REG_R5  * INT_REG_WIDTH)     /* $5  - Argument/Return 0 */
+#define TP_A2    (REG_R6  * INT_REG_WIDTH)     /* $6  - Argument/Return 1 */
+#define TP_A3    (REG_R7  * INT_REG_WIDTH)     /* $7  - Argument 2 */
+#define TP_A4    (REG_R8  * INT_REG_WIDTH)     /* $8  - Argument 3 */
+#define TP_A5    (REG_R9  * INT_REG_WIDTH)     /* $9  - Argument 4 */
+#define TP_A6    (REG_R10 * INT_REG_WIDTH)    /* $10 - Argument 5 */
+#define TP_A7    (REG_R11 * INT_REG_WIDTH)    /* $11 - Argument 6 */
+#define TP_T0    (REG_R12 * INT_REG_WIDTH)    /* $12 - Argument 7 */
+#define TP_T1    (REG_R13 * INT_REG_WIDTH)    /* $13 - Temporary 0 */
+#define TP_T2    (REG_R14 * INT_REG_WIDTH)    /* $14 - Temporary 1 */
+#define TP_T3    (REG_R15 * INT_REG_WIDTH)    /* $15 - Temporary 2 */
+#define TP_T4    (REG_R16 * INT_REG_WIDTH)    /* $16 - Temporary 3 */
+#define TP_T5    (REG_R17 * INT_REG_WIDTH)    /* $17 - Temporary 4 */
+#define TP_T6    (REG_R18 * INT_REG_WIDTH)    /* $18 - Temporary 5 */
+#define TP_T7    (REG_R19 * INT_REG_WIDTH)    /* $19 - Temporary 6 */
+#define TP_T8    (REG_R20 * INT_REG_WIDTH)    /* $20 - Temporary 7 */
+#define TP_U0    (REG_R21 * INT_REG_WIDTH)    /* $21 - Temporary 8 */
+#define TP_FP    (REG_R22 * INT_REG_WIDTH)    /* $22 - Reserved (nomips16) */
+#define TP_S0    (REG_R23 * INT_REG_WIDTH)    /* $23 - Frame pointer */
+#define TP_S1    (REG_R24 * INT_REG_WIDTH)    /* $24 - Saved 0 */
+#define TP_S2    (REG_R25 * INT_REG_WIDTH)    /* $25 - Saved 1 */
+#define TP_S3    (REG_R26 * INT_REG_WIDTH)    /* $26 - Saved 2 */
+#define TP_S4    (REG_R27 * INT_REG_WIDTH)    /* $27 - Saved 3 */
+#define TP_S5    (REG_R28 * INT_REG_WIDTH)    /* $28 - Saved 4 */
+#define TP_S6    (REG_R29 * INT_REG_WIDTH)    /* $29 - Saved 5 */
+#define TP_S7    (REG_R30 * INT_REG_WIDTH)    /* $30 - Saved 6 */
+#define TP_S8    (REG_R31 * INT_REG_WIDTH)    /* $31 - Saved 7 */
+
+#define TP_CRMD    (CSR_CRMD  * INT_REG_WIDTH) /* Thread switch */
+#define TP_PRMD    (CSR_PRMD  * INT_REG_WIDTH) /* save these */
+#define TP_EUEN    (CSR_EUEN  * INT_REG_WIDTH) /* FPU */
+#define TP_ESTAT   (CSR_ESTAT * INT_REG_WIDTH) /* IP status, ECODE */
+#define TP_ERA     (CSR_ERA   * INT_REG_WIDTH) /* Exception Return Addr */
+#define TP_ECFG    (CSR_ECFG  * INT_REG_WIDTH) /* IP enable */
+#define TP_BADV    (CSR_BADV  * INT_REG_WIDTH) /* Bad Vaddr */
 
 #ifdef CONFIG_ARCH_FPU
 #  define REG_F0        (0)
@@ -194,25 +202,117 @@
 #  define REG_F30       (30)
 #  define REG_F31       (31)
 #  define REG_FCC0      (32)
-#  define REG_FCSR      (33)
+#  define REG_FCC1      (33)
+#  define REG_FCC2      (34)
+#  define REG_FCC3      (35)
+#  define REG_FCC4      (36)
+#  define REG_FCC5      (37)
+#  define REG_FCC6      (38)
+#  define REG_FCC7      (39)
+#  define REG_FCSR      (40)
+#  define FPU_XCPT_REGS     (40)
 
-#  define FPU_XCPT_REGS     (34)
+#  define TP_F0   (FPU_REG_WIDTH * REG_F0)
+#  define TP_F1   (FPU_REG_WIDTH * REG_F1)
+#  define TP_F2   (FPU_REG_WIDTH * REG_F2)
+#  define TP_F3   (FPU_REG_WIDTH * REG_F3)
+#  define TP_F4   (FPU_REG_WIDTH * REG_F4)
+#  define TP_F5   (FPU_REG_WIDTH * REG_F5)
+#  define TP_F6   (FPU_REG_WIDTH * REG_F6)
+#  define TP_F7   (FPU_REG_WIDTH * REG_F7)
+#  define TP_F8   (FPU_REG_WIDTH * REG_F8)
+#  define TP_F9   (FPU_REG_WIDTH * REG_F9)
+#  define TP_F10  (FPU_REG_WIDTH * REG_F10)
+#  define TP_F11  (FPU_REG_WIDTH * REG_F11)
+#  define TP_F12  (FPU_REG_WIDTH * REG_F12)
+#  define TP_F13  (FPU_REG_WIDTH * REG_F13)
+#  define TP_F14  (FPU_REG_WIDTH * REG_F14)
+#  define TP_F15  (FPU_REG_WIDTH * REG_F15)
+#  define TP_F16  (FPU_REG_WIDTH * REG_F16)
+#  define TP_F17  (FPU_REG_WIDTH * REG_F17)
+#  define TP_F18  (FPU_REG_WIDTH * REG_F18)
+#  define TP_F19  (FPU_REG_WIDTH * REG_F19)
+#  define TP_F20  (FPU_REG_WIDTH * REG_F20)
+#  define TP_F21  (FPU_REG_WIDTH * REG_F21)
+#  define TP_F22  (FPU_REG_WIDTH * REG_F22)
+#  define TP_F23  (FPU_REG_WIDTH * REG_F23)
+#  define TP_F24  (FPU_REG_WIDTH * REG_F24)
+#  define TP_F25  (FPU_REG_WIDTH * REG_F25)
+#  define TP_F26  (FPU_REG_WIDTH * REG_F26)
+#  define TP_F27  (FPU_REG_WIDTH * REG_F27)
+#  define TP_F28  (FPU_REG_WIDTH * REG_F28)
+#  define TP_F29  (FPU_REG_WIDTH * REG_F29)
+#  define TP_F30  (FPU_REG_WIDTH * REG_F30)
+#  define TP_F31  (FPU_REG_WIDTH * REG_F31)
+#  define TP_FCC0 (FPU_REG_WIDTH * REG_FCC0)
+#  define TP_FCC1 (FPU_REG_WIDTH * REG_FCC1)
+#  define TP_FCC2 (FPU_REG_WIDTH * REG_FCC2)
+#  define TP_FCC3 (FPU_REG_WIDTH * REG_FCC3)
+#  define TP_FCC4 (FPU_REG_WIDTH * REG_FCC4)
+#  define TP_FCC5 (FPU_REG_WIDTH * REG_FCC5)
+#  define TP_FCC6 (FPU_REG_WIDTH * REG_FCC6)
+#  define TP_FCC7 (FPU_REG_WIDTH * REG_FCC7)
+#  define TP_FCSR (FPU_REG_WIDTH * REG_FCSR)
+
 #else /* !CONFIG_ARCH_FPU */
 #  define FPU_XCPT_REGS     (0)
 #endif /* CONFIG_ARCH_FPU */
 
-#define FPU_XCPT_SIZE     (8 * FPU_XCPT_REGS)
+#define INT_XCPT_SIZE    (INT_REG_WIDTH * INT_XCPT_REGS)
+#define FPU_XCPT_SIZE    (FPU_REG_WIDTH * FPU_XCPT_REGS)
 
 #define XCPTCONTEXT_REGS (INT_XCPT_REGS + FPU_XCPT_REGS)
-#define XCPTCONTEXT_SIZE (8 * XCPTCONTEXT_REGS)
+#define XCPTCONTEXT_SIZE (INT_XCPT_SIZE + FPU_XCPT_SIZE)
 
 #if XCPTCONTEXT_SIZE % 16 != 0
 #  error "INT_CTX_REGS and FPU_CTX_REGS must be an even number to ensure the stack is aligned to 16 bytes"
 #endif
 
+/* friendly define */
+#define REG_ZERO  (REG_R0)     /* $0  - Always zero */
+#define REG_RA    (REG_R1)     /* $1  - Return address */
+#define REG_TP    (REG_R2)     /* $2  - Stack pointer */
+#define REG_SP    (REG_R3)     /* $3  - Global pointer */
+#define REG_A0    (REG_R4)     /* $4  - Thread pointer */
+#define REG_A1    (REG_R5)     /* $5  - Argument/Return 0 */
+#define REG_A2    (REG_R6)     /* $6  - Argument/Return 1 */
+#define REG_A3    (REG_R7)     /* $7  - Argument 2 */
+#define REG_A4    (REG_R8)     /* $8  - Argument 3 */
+#define REG_A5    (REG_R9)     /* $9  - Argument 4 */
+#define REG_A6    (REG_R10)    /* $10 - Argument 5 */
+#define REG_A7    (REG_R11)    /* $11 - Argument 6 */
+#define REG_T0    (REG_R12)    /* $12 - Argument 7 */
+#define REG_T1    (REG_R13)    /* $13 - Temporary 0 */
+#define REG_T2    (REG_R14)    /* $14 - Temporary 1 */
+#define REG_T3    (REG_R15)    /* $15 - Temporary 2 */
+#define REG_T4    (REG_R16)    /* $16 - Temporary 3 */
+#define REG_T5    (REG_R17)    /* $17 - Temporary 4 */
+#define REG_T6    (REG_R18)    /* $18 - Temporary 5 */
+#define REG_T7    (REG_R19)    /* $19 - Temporary 6 */
+#define REG_T8    (REG_R20)    /* $20 - Temporary 7 */
+#define REG_U0    (REG_R21)    /* $21 - Temporary 8 */
+#define REG_FP    (REG_R22)    /* $22 - Reserved (nomips16) */
+#define REG_S0    (REG_R23)    /* $23 - Frame pointer */
+#define REG_S1    (REG_R24)    /* $24 - Saved 0 */
+#define REG_S2    (REG_R25)    /* $25 - Saved 1 */
+#define REG_S3    (REG_R26)    /* $26 - Saved 2 */
+#define REG_S4    (REG_R27)    /* $27 - Saved 3 */
+#define REG_S5    (REG_R28)    /* $28 - Saved 4 */
+#define REG_S6    (REG_R29)    /* $29 - Saved 5 */
+#define REG_S7    (REG_R30)    /* $30 - Saved 6 */
+#define REG_S8    (REG_R31)    /* $31 - Saved 7 */
+
+#define REG_CRMD    CSR_CRMD  /* Thread switch */
+#define REG_PRMD    CSR_PRMD  /* save these */
+#define REG_EUEN    CSR_EUEN  /* FPU */
+#define REG_ESTAT   CSR_ESTAT /* IP status, ECODE */
+#define REG_ERA     CSR_ERA   /* Exception Return Addr */
+#define REG_ECFG    CSR_ECFG  /* IP enable */
+#define REG_BADV    CSR_BADV  /* Bad Vaddr */
+
 #define zero  $r0
 #define ra    $r1
-#define gp    $r2
+#define tp    $r2
 #define sp    $r3
 #define v0    $r4
 #define v1    $r5
@@ -233,7 +333,7 @@
 #define t6    $r18
 #define t7    $r19
 #define t8    $r20
-#define tp    $r21
+#define u0    $r21
 #define fp    $r22
 #define s0    $r23
 #define s1    $r24
@@ -384,7 +484,7 @@ static inline irqstate_t up_irq_save(void)
     __asm__ __volatile__(
         "csrxchg %[val], %[mask], %[reg]\n\t"
         : [val] "+r" (flags)
-        : [mask] "r" (CSR_CRMD_IE), [reg] "i" (LOONGARCH_CSR_CRMD)
+        : [mask] "r" (CSR_CRMD_IE), [reg] "i" (LA_CSR_CRMD)
         : "memory");
 
     return flags;
@@ -408,7 +508,7 @@ static inline void up_irq_restore(irqstate_t flags)
     __asm__ __volatile__(
         "csrxchg %[val], %[mask], %[reg]\n\t"
         : [val] "+r" (flags)
-        : [mask] "r" (CSR_CRMD_IE), [reg] "i" (LOONGARCH_CSR_CRMD)
+        : [mask] "r" (CSR_CRMD_IE), [reg] "i" (LA_CSR_CRMD)
         : "memory");
 }
 
@@ -427,7 +527,7 @@ static inline irqstate_t up_irq_enable(void)
   __asm__ __volatile__(
     "csrxchg %[val], %[mask], %[reg]\n\t"
     : [val] "+r" (flags)
-    : [mask] "r" (CSR_CRMD_IE), [reg] "i" (LOONGARCH_CSR_CRMD)
+    : [mask] "r" (CSR_CRMD_IE), [reg] "i" (LA_CSR_CRMD)
     : "memory");
 
   return flags;
@@ -448,7 +548,7 @@ static inline void up_irq_disable(void)
     __asm__ __volatile__(
         "csrxchg %[val], %[mask], %[reg]\n\t"
         : [val] "+r" (flags)
-        : [mask] "r" (CSR_CRMD_IE), [reg] "i" (LOONGARCH_CSR_CRMD)
+        : [mask] "r" (CSR_CRMD_IE), [reg] "i" (LA_CSR_CRMD)
         : "memory");
 }
 
@@ -466,7 +566,7 @@ static inline_function void up_set_interrupt_context(bool flag)
     __asm__ __volatile__(
         "csrwr %0, %1"
         : "+r"(flag)
-        : "i"(LOONGARCH_CSR_KS3)
+        : "i"(LA_CSR_KS3)
         : "memory");
 }
 
@@ -486,7 +586,7 @@ noinstrument_function static inline_function bool up_interrupt_context(void)
     __asm__ __volatile__(
         "csrrd %0, %1\n\t"
         : "=r" (ctx)
-        : "i" (LOONGARCH_CSR_KS3)
+        : "i" (LA_CSR_KS3)
         : "memory");
 
     return ctx > 0;

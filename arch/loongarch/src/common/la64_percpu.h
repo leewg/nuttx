@@ -40,8 +40,10 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#define PERCPU_CURR_REGS_OFFSET 0x0
-#define PERCPU_IRQ_STACK_OFFSET 0x8
+#define PERCPU_CURR_REGS_OFFSET   0x0
+#define PERCPU_IRQ_STACK_OFFSET   0x8
+#define PERCPU_KSTACK_TOP_OFFSET  0x10
+#define PERCPU_CPU_OFFSET         0x18
 
 #ifndef __ASSEMBLY__
 
@@ -51,10 +53,11 @@
 
 struct la64_percpu_s
 {
-  uintreg_t cur_regs;
-  uintreg_t irq_stack;
+  uintptr_t cur_regs;   // Current interrupt context(0: task status, 1: interrupt status
+  uintptr_t irq_stack;  // Interrupt stack top
+  uintptr_t kstack_top; // current task's kernel stack top
 #if CONFIG_SMP_NCPUS > 1
-  uint32_t  cpu; /* cpu id */
+  uint32_t  cpu;        // CPU ID
 #endif
 };
 
@@ -68,7 +71,7 @@ extern struct la64_percpu_s g_percpu[CONFIG_SMP_NCPUS];
 static inline_function FAR struct la64_percpu_s *la64_my_percpu(void)
 {
   uintptr_t val;
-  __asm__ __volatile__("csrrd %0, %1" : "=r"(val) : "i"(LOONGARCH_CSR_KS3));
+  __asm__ __volatile__("csrrd %0, %1" : "=r"(val) : "i"(LA_CSR_KS3));
 
   return (FAR struct la64_percpu_s *)val;
 }
@@ -77,7 +80,7 @@ static inline_function FAR struct la64_percpu_s *la64_my_percpu(void)
 static inline_function void la64_percpu_init(int cpu)
 {
   uintptr_t val = (uintptr_t)&g_percpu[cpu];
-  __asm__ __volatile__("csrwr %0, %1" : : "r"(val), "i"(LOONGARCH_CSR_KS3));
+  __asm__ __volatile__("csrwr %0, %1" : : "r"(val), "i"(LA_CSR_KS3));
 }
 
 #endif /* __ASSEMBLY__ */

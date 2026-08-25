@@ -25,6 +25,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <nuttx/nuttx.h>
 
 #include <sys/types.h>
 #include <nuttx/debug.h>
@@ -68,7 +69,14 @@
 
 void weak_function up_allocate_heap(void **heap_start, size_t *heap_size)
 {
-  *heap_start = g_idle_topstack;
-  *heap_size = CONFIG_RAM_END - (size_t)g_idle_topstack;
+  uintptr_t ustart = (uintptr_t)&_end + 0x2000;
+  uintptr_t uend = CONFIG_RAM_START + CONFIG_RAM_SIZE;
+
+  ustart = ALIGN_UP(ustart, 8);
+
+  *heap_start = ustart;
+  *heap_size = uend - ustart;
+  //*heap_start = g_idle_topstack;
+  //*heap_size = CONFIG_RAM_END - (size_t)g_idle_topstack;
   sinfo("heap_start=0x%p, heap_size=0x%"PRIx64"\n", *heap_start, *heap_size);
 }

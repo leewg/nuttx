@@ -26,11 +26,25 @@ ENTRY(__start)
 
 MEMORY
 {
-  ram (rwx) : ORIGIN = 0x9000000000200000, LENGTH = 0x10000000
+  ram (rwx) : ORIGIN = 0x9000000000000000, LENGTH = 256M
 }
 
 SECTIONS
 {
+  . = ORIGIN(ram);
+  .vectors :
+  {
+    KEEP(*(.vectors.merr))
+    . = ORIGIN(ram) + 0x1000;
+    KEEP(*(.vectors.tlb))
+    . = ORIGIN(ram) + 0x2000;
+    KEEP(*(.vectors.eentry))
+    /*. = ORIGIN(ram) + 0x5000; */
+  } > ram
+
+  /* kernel text start offset 1M */
+  /*. = ORIGIN(ram) + 0x100000; */
+  . = ALIGN(4096);
   .text :
   {
     _stext = .;
@@ -93,21 +107,21 @@ SECTIONS
     _ebss = .;
   } > ram
 
-  /* image end symbal, IDLE thread stack will grow upward from this address */
-  _end = .;
-
   /*
   .initstack :
   {
+    . = ALIGN(16);
     _s_initstack = .;
     *(.initstack)
+    . = ALIGN(4096);
+    g_idle_topstack = .;
+    _e_initstack = .;
   } > ram
-
-  . = ALIGN(4096);
-
-  g_idle_topstack = .;
-  _e_initstack = .;
   */
+
+  /* image end symbal, IDLE thread stack will grow upward from this address */
+  . = ALIGN(4096);
+  _end = .;
 
   /DISCARD/ :
   {

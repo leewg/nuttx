@@ -42,49 +42,6 @@
 #include "signal/signal.h"
 #include "la64_internal.h"
 #include "la64_percpu.h"
-#include "ilog2.h"
-
-extern void handle_exception_generic(void);
-extern void handle_fp_disabled(void);
-extern void la64_fpu_disabled_dispatch(uint64_t *regs);
-extern void cache_parity_error(void);
-
-extern void handle_sys(void);
-extern void handle_vint(void);
-extern void handle_reserved(void);
-
-#define VECSIZE 0x200
-#define SZ_64K  0x00010000
-
-unsigned long eentry;
-unsigned long tlbrentry;
-long exception_handlers[VECSIZE * 128 / sizeof(long)] aligned_data(SZ_64K);
-
-void *exception_table[EXCCODE_INT_START] = {
-  [0 ... EXCCODE_INT_START - 1] = handle_reserved,
-
-#if 0
-  [EXCCODE_TLBI]		= handle_tlb_load,
-  [EXCCODE_TLBL]		= handle_tlb_load,
-  [EXCCODE_TLBS]		= handle_tlb_store,
-  [EXCCODE_TLBM]		= handle_tlb_modify,
-  [EXCCODE_TLBNR]		= handle_tlb_protect,
-  [EXCCODE_TLBNX]		= handle_tlb_protect,
-  [EXCCODE_TLBPE]		= handle_tlb_protect,
-  [EXCCODE_ADE]		= handle_ade,
-  [EXCCODE_ALE]		= handle_ale,
-  [EXCCODE_SYS]		= handle_sys,
-  [EXCCODE_BP]		= handle_bp,
-  [EXCCODE_INE]		= handle_ri,
-  [EXCCODE_IPE]		= handle_ri,
-  [EXCCODE_FPDIS]		= handle_fpu,
-  [EXCCODE_LSXDIS]	= handle_lsx,
-  [EXCCODE_LASXDIS]	= handle_lasx,
-  [EXCCODE_FPE]		= handle_fpe,
-  [EXCCODE_BTDIS]		= handle_lbt,
-  [EXCCODE_WATCH]		= handle_watch,
-#endif
-};
 
 /****************************************************************************
  * Public Functions
@@ -92,34 +49,8 @@ void *exception_table[EXCCODE_INT_START] = {
 
 typedef uintptr_t (*syscall_t)(unsigned int, ...);
 
-static inline void setup_vint_size(unsigned int size)
-{
-  unsigned int vs;
+#define ECFG_VS_128B        (7 << CSR_ECFG_VS_SHIFT)
 
-  vs = ilog2(size/4);
-
-  if (vs == 0 || vs > 7)
-    syslog(LOG_INFO, "vs is error: %x\n", vs);
-
-  csr_xchg32(vs<<CSR_ECFG_VS_SHIFT, CSR_ECFG_VS, LOONGARCH_CSR_ECFG);
-}
-
-static void configure_exception_vector(void)
-{
-  eentry = (unsigned long)exception_handlers;
-  tlbrentry = (unsigned long)exception_handlers + 80*VECSIZE;
-
-  csr_write64(eentry, LOONGARCH_CSR_EENTRY);
-  csr_write64(tlbrentry, LOONGARCH_CSR_TLBRENTRY);
-  csr_write64(eentry, LOONGARCH_CSR_MERRENTRY);
-}
-
-void set_handler(unsigned long offset, void *addr, unsigned long size)
-{
-  memcpy((void *)(eentry + offset), addr, size);
-
-  UP_ISB();
-}
 
 /****************************************************************************
  * Name: trap_init
@@ -130,30 +61,19 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
 
 void trap_init(void)
 {
-  int i;
-  unsigned long ecfg;
+  uint32_t ecfg;
 
-  setup_vint_size(VECSIZE);
-  configure_exception_vector();
+  ecfg = csr_read32(LA_CSR_ECFG);
+  ecfg &= ~CSR_ECFG_VS;
+  ecfg |= ECFG_VS_128B;
+  csr_write32(ecfg, LA_CSR_ECFG);
 
-  for (i = EXCCODE_INT_START; i < EXCCODE_INT_END; i++)
-  {
-    set_handler(i*VECSIZE, handle_vint, VECSIZE);
-  }
+  csr_write64(0x9000000000000000, LA_CSR_MERRENTRY);
+  csr_write64(0x9000000000001000, LA_CSR_TLBRENTRY);
+  csr_write64(0x9000000000002000, LA_CSR_EENTRY);
 
-  for (i = 0; i < 64; i++)
-  {
-    set_handler(i*VECSIZE, handle_reserved, VECSIZE);
-  }
-
-  set_handler(11*VECSIZE, handle_sys, VECSIZE);
-
-#ifdef CONFIG_ARCH_FPU
-  set_handler(31*VECSIZE, handle_fp_disabled, VECSIZE);
-#endif
-
+  UP_DSB();
   UP_ISB();
-
 }
 
 /****************************************************************************
@@ -173,24 +93,19 @@ void trap_init(void)
  *
  ****************************************************************************/
 
-void la64_syscall_dispatch(unsigned int nbr, uint64_t arg0, uint64_t arg1,
+uintptr_t la64_syscall_dispatch(unsigned int nbr, uint64_t arg0, uint64_t arg1,
                            uint64_t arg2, uint64_t arg3, uint64_t arg4,
                            uint64_t arg5, uint64_t *regs)
 {
     struct tcb_s *rtcb = this_task();
-    register long a0 asm("a0") = (long)(nbr);
-    register long a1 asm("a1") = (long)(arg0);
-    register long a2 asm("a2") = (long)(arg1);
-    register long a3 asm("a3") = (long)(arg2);
-    register long a4 asm("a4") = (long)(arg3);
-    register long a5 asm("a5") = (long)(arg4);
-    register long a6 asm("a6") = (long)(arg5);
     syscall_t do_syscall;
     uintptr_t ret;
-    int cpu = up_cpu_index();
+
+    syslog(LOG_EMERG, "SYSCALL! ESTAT = 0x%x, nbr = 0x%x\n",
+        csr_read32(LA_CSR_ESTAT), nbr);
 
     /* Valid system call ? */
-    if (a0 > SYS_maxsyscall)
+    if (nbr > SYS_maxsyscall)
     {
         /* Nope, get out */
         return -ENOSYS;
@@ -201,11 +116,11 @@ void la64_syscall_dispatch(unsigned int nbr, uint64_t arg0, uint64_t arg1,
     /* Indicate that we are in a syscall handler */
     rtcb->flags |= TCB_FLAG_SYSCALL;
     /* Offset a0 to account for the reserved syscall */
-    a0 -= CONFIG_SYS_RESERVED;
+    nbr -= CONFIG_SYS_RESERVED;
     /* Find the system call from the lookup table */
-    do_syscall = (syscall_t)g_stublookup[a0];
+    do_syscall = (syscall_t)g_stublookup[nbr];
     /* Run the system call, save return value locally */
-    ret = do_syscall(a0, a1, a2, a3, a4, a5, a6);
+    ret = do_syscall(nbr, arg0, arg1, arg2, arg3, arg4, arg5);
 
     /* System call is now done */
     rtcb->flags &= ~TCB_FLAG_SYSCALL;
@@ -244,79 +159,79 @@ static void la64_regs_dump(uint64_t *regs)
   _alert("==============================================\n");
 }
 
-void do_reserved(uint64_t *regs)
-{
-  up_putc('E');
-  up_putc('X');
-  up_putc('C');
-  up_putc('E');
-  up_putc('P');
-  up_putc('T');
-  up_putc('\n');
-}
-
 /****************************************************************************
  * Name: la64_exception_dispatch
  *
- * Description:
+ * Description: IS[0]
  *
  ****************************************************************************/
 
-void la64_exception_dispatch(uint64_t *regs)
+uint64_t *la64_exception_handler(uint64_t *regs)
 {
-  syslog(LOG_INFO, "la64_exceptino_dispatch\n");
+  uint32_t estat = csr_read32(LA_CSR_ESTAT);
+  uint32_t ecode = (estat & CSR_ESTAT_EXC) >> CSR_ESTAT_EXC_SHIFT;
 
+  syslog(LOG_EMERG, "Exception! ESTAT = 0x%x, ECODE = 0x%x\n", estat, ecode);
+
+  if (ecode == 0xb)
+  {
+    regs[REG_ERA] += 4;
+    uintptr_t ret = la64_syscall_dispatch((unsigned int)regs[REG_A0],
+        regs[REG_A1], regs[REG_A2], regs[REG_A3], regs[REG_A4],
+        regs[REG_A5], regs[REG_A6], regs);
+
+    regs[REG_A0] = (uint64_t)ret;
+
+    return regs;
+  }
+
+  syslog(LOG_EMERG, "Unhandled Exception! ECODE = 0x%x, ERA = 0x%16lx\n",
+      ecode, regs[REG_ERA]);
   la64_regs_dump(regs);
   PANIC();
-}
 
-void cache_parity_error(void)
-{
-  /* For the moment, report the problem and hang. */
-  syslog(LOG_INFO, "Cache error exception:\n");
-  PANIC();
+  return regs;
 }
 
 /****************************************************************************
  * Name: do_vint
  *
- * Description:
+ * Description: IS[1~13]
  *
  ****************************************************************************/
-void do_vint(uint64_t *regs)
+uint64_t *la64_vint_handler(uint64_t *regs)
 {
-    uint64_t estat = regs[REG_ESTAT];
-    uint32_t irq_mask = estat &CSR_ESTAT_IS;
-    int irq_bit;
+  struct la64_percpu_s *percpu = la64_my_percpu();
+  percpu->cur_regs = (uintptr_t)regs;
 
-    up_putc('V');
-    up_putc('I');
-    up_putc('N');
-    up_putc('T');
-    up_putc('\n');
+  uint32_t estat = csr_read32(LA_CSR_ESTAT);
+  uint32_t irq = (estat & 0x3fff);
 
-    /* Loongarch interrupt distrubition:
-     * bit12   : IPP
-     * bit11   : TI
-     * bit10   : PMI
-     * bit9..2 : HWI7 ~ HWI0
-     * bit1..0 : SWI1 ~ SWI0
-     */
-    while (irq_mask != 0)
-    {
-#ifdef __GNUC__
-        irq_bit = __builtin_ctz(irq_mask);
-#else
-        for (irq_bit = LA_LOC_IRQ_BASE; irq_bit < 13; irq_bit++)
-        {
-            if ((irq_mask & (1 << irq_bit)) != 0)
-                break;
-        }
-#endif
-        regs = la64_doirq(LA_EXT_IRQ_BASE + irq_bit, regs);
+  syslog(LOG_EMERG, "VINT! ESTAT = 0x%x, irq = 0x%x\n", estat, irq);
 
-        irq_mask &= ~(1 << irq_bit);
-    }
+  if ((estat & CSR_ESTAT_IS) == 0) {
+    return regs;
+  }
+
+  if (irq & (1 << 11)) {
+    csr_write32(0x1, LA_CSR_TINTCLR);
+    irq = LA_LOC_IRQ_BASE + INT_TI; /* TI */
+  } else if (irq & 0x3fc) {
+    int hwi = __builtin_ctz(irq & 0x3fc) - 2;
+    irq = LA_LOC_IRQ_BASE + hwi;
+  } else if (irq & 0x3) {
+    int swi = __builtin_ctz(irq & 0x3);
+    csr_write32(1 << swi, LA_CSR_ESTAT);
+    irq = LA_LOC_IRQ_BASE + swi;
+  } else {
+    return regs;
+  }
+
+  regs = la64_doirq(irq, regs);
+
+  percpu->cur_regs = 0;
+
+  return regs;
 }
 
 #ifdef CONFIG_ARCH_FPU
@@ -378,10 +293,14 @@ void la64_fpu_disable_dispatch(uint64_t *regs)
  *
  ****************************************************************************/
 
-void la64_fatal_handler(uint64_t estat, uint64_t era, uint64_t badv, FAR uintptr_t *regs)
+void la64_fatal_handler(uint64_t *regs)
 {
   FAR struct la64_percpu_s *percpu = la64_my_percpu();
-  uint32_t ecode = (estat & CSR_ESTAT_EXC) >> CSR_ESTAT_EXC_SHIFT;
+
+  uint64_t estat = regs[REG_ESTAT];
+  uint64_t era   = regs[REG_ERA];
+  uint64_t badv  = csr_read64(LA_CSR_BADV);
+  uint64_t ecode = (estat & CSR_ESTAT_EXC) >> CSR_ESTAT_EXC_SHIFT;
 
   percpu->cur_regs = (uintptr_t)regs;
 

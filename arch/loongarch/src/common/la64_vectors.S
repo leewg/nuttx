@@ -40,83 +40,106 @@
 
   .file "la64_vectors.S"
 
-  .align  5
-SYM_FUNC_START(handle_vint)
+  .global machine_error_entry
+  .global exception_common_entry
+  .global tlbrefill_error_entry
+  .extern la64_vint_handler
+  .extern la64_exception_handler
 
-  li.d  a0, '$'
-  bl  tgt_putc
-  li.d  a0, '\r'
-  bl  tgt_putc
-  li.d  a0, '\n'
-  bl  tgt_putc
-
-  BACKUP_T0T1
-  SAVE_ALL
-  move  a0, sp
-  move  a1, sp
-  la.abs  t0, do_vint
-  jirl  ra, t0, 0
-  RESTORE_ALL_AND_RET
-SYM_FUNC_END(handle_vint)
-
-SYM_FUNC_START(except_vec_cex)
-  b cache_parity_error
-SYM_FUNC_END(except_vec_cex)
-
-.macro build_prep_badv
-  csrrd t0, LOONGARCH_CSR_BADV
-  st.d  t0, sp, REG_BADV
-.endm
-
-.macro build_prep_fcsr
-  movfcsr2gr  a1, fcsr0
-.endm
-
-.macro build_prep_none
-.endm
-
-.macro BUILD_HANDLER exception handler prep
-  .align 5
-  SYM_FUNC_START(handle_\exception)
-
-  li.d  a0, '@'
-  bl  tgt_putc
-  li.d  a0, '\r'
-  bl  tgt_putc
-  li.d  a0, '\n'
-  bl  tgt_putc
-
-  BACKUP_T0T1
-  SAVE_ALL
-  build_prep_\prep
-  move  a0, sp
-  move  a1, sp
-  la.abs  t0, do_\handler
-  jirl  ra, t0, 0
-  RESTORE_ALL_AND_RET
-  SYM_FUNC_END(handle_\exception)
-.endm
-
-#if 0
-BUILD_HANDLER ade ade badv
-BUILD_HANDLER ale ale badv
-BUILD_HANDLER bp bp none
-BUILD_HANDLER fpe fpe fcsr
-BUILD_HANDLER fpu fpu none
-BUILD_HANDLER lbt lbt none
-BUILD_HANDLER ri ri none
-#endif
-BUILD_HANDLER reserved reserved none
-
-SYM_FUNC_START(handle_sys)
-  la.abs  t0, handle_syscall
+  /* MERR vector entry */
+  .section .vectors.merr, "ax"
+machine_error_entry:
+  csrwr   t0, LA_CSR_MERRSAVE
+  la.abs  t0, real_machine_error_entry
   jirl  zero, t0, 0
-SYM_FUNC_END(handle_sys)
 
-SYM_FUNC_START(handle_syscall)
-  li.d  a0, '@'
-  bl  tgt_putc
-SYM_FUNC_END(handle_syscall)
+  /* TLB Refill vector entry */
+  .section .vectors.tlb, "ax"
+tlbrefill_error_entry:
+  csrwr   t0, LA_CSR_TLBRSAVE
+  la.abs  t0, real_tlbrefill_error_entry
+  jirl  zero, t0, 0
+
+  /* Common Exception vector entry (Vector 0) */
+  .section .vectors.eentry, "ax"
+  .balign 128
+exception_common_entry:
+  BACKUP_T0T1
+  la.abs  t1, real_exception_entry
+  jirl  zero, t1, 0
+
+  /* Interrupt Vector entry (Vector1~13) */
+.macro BUILD_INT_VECTOR num
+  .balign 128
+vector_\num:
+  BACKUP_T0T1
+  la.abs  t1, common_int_handler
+  jirl  zero, t1, 0
+.endm
+
+/* 1 ~ 13 entry */
+BUILD_INT_VECTOR 1   /* EENTRY + 0x080: SWI0 */
+BUILD_INT_VECTOR 2   /* EENTRY + 0x100: SWI1 */
+BUILD_INT_VECTOR 3   /* EENTRY + 0x180: HWI0 */
+BUILD_INT_VECTOR 4   /* EENTRY + 0x200: HWI1 */
+BUILD_INT_VECTOR 5   /* EENTRY + 0x280: HWI2 */
+BUILD_INT_VECTOR 6   /* EENTRY + 0x300: HWI3 */
+BUILD_INT_VECTOR 7   /* EENTRY + 0x380: HWI4 */
+BUILD_INT_VECTOR 8   /* EENTRY + 0x400: HWI5 */
+BUILD_INT_VECTOR 9   /* EENTRY + 0x480: HWI6 */
+BUILD_INT_VECTOR 10  /* EENTRY + 0x500: HWI7 */
+BUILD_INT_VECTOR 11  /* EENTRY + 0x580: TI   */
+BUILD_INT_VECTOR 12  /* EENTRY + 0x600: IPI  */
+BUILD_INT_VECTOR 13  /* EENTRY + 0x680: PMC  */
+
+  .text
+SYM_FUNC_START(common_int_handler)
+  SAVE_ALL
+  move  a0, sp
+  la.pcrel t0, la64_vint_handler
+  jirl  ra, t0, 0
+
+  move  sp, a0
+  RESTORE_ALL_AND_RET
+SYM_FUNC_END(common_int_handler)
+
+SYM_FUNC_START(real_exception_entry)
+  SAVE_ALL
+  move  a0, sp
+  la.pcrel t0, la64_exception_handler
+  jirl  ra, t0, 0
+
+  move  sp, a0
+  RESTORE_ALL_AND_RET
+SYM_FUNC_END(real_exception_entry)
+
+SYM_FUNC_START(real_machine_error_entry)
+  csrrd t1, LA_CSR_MERRCTL
+  andi  t1, t1, 0x1
+  beqz  t1, lbl_merr_return
+
+  csrrd t1, LA_CSR_MERRSAVE
+  SAVE_ALL
+
+  move  a0, sp
+  la.abs t1, la64_fatal_handler
+  jirl  ra, t1, 0
+
+lbl_merr_return:
+  csrrd t8, LA_CSR_MERRSAVE
+  ertn
+SYM_FUNC_END(real_machine_error_entry)
+
+SYM_FUNC_START(real_tlbrefill_error_entry)
+  csrrd t8, LA_CSR_TLBRSAVE
+  SAVE_ALL
+
+  move  a0, sp
+  //la.abs t8, la64_tlbrefill_handler
+  jirl  ra, t8, 0
+
+  RESTORE_ALL_AND_RET
+SYM_FUNC_END(real_tlbrefill_error_entry)
 
 /****************************************************************************
  * Data Section (Interrupt Stack Space)
