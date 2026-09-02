@@ -73,12 +73,12 @@
 #define INT_AVEC    14
 
 /* Interrupts */
-#define LA_LOC_IRQ_BASE  0
+#define LA_LOC_IRQ_BASE  64
 #define LA_IRQ_SWI0 0
 #define LA_IRQ_SWI1 1
 #define LA_IRQ_HWI2 4
 #define LA_IRQ_TIMER  12
-#define LA_EXT_IRQ_BASE  16
+#define LA_EXT_IRQ_BASE   128
 
 /* Register definitions (indices into exception context regs array) */
 #define INT_REG_WIDTH   8
@@ -414,7 +414,7 @@ static inline_function uintptr_t up_getsp(void)
   register uintptr_t sp;
   __asm__ __volatile__
       (
-       "move %0, $sp\n"
+       "move %0, sp\n"
        : "=r"(sp)
        );
 
@@ -505,9 +505,12 @@ static inline irqstate_t up_irq_save(void)
 
 static inline void up_irq_restore(irqstate_t flags)
 {
+  /* if flags[bit2] == 1 or flags == 1/true, enable IE (0x4) */
+  irqstate_t ie = ((flags & CSR_CRMD_IE) || flags == 1) ? CSR_CRMD_IE : 0;
+
     __asm__ __volatile__(
         "csrxchg %[val], %[mask], %[reg]\n\t"
-        : [val] "+r" (flags)
+        : [val] "+r" (ie)
         : [mask] "r" (CSR_CRMD_IE), [reg] "i" (LA_CSR_CRMD)
         : "memory");
 }
@@ -566,7 +569,7 @@ static inline_function void up_set_interrupt_context(bool flag)
     __asm__ __volatile__(
         "csrwr %0, %1"
         : "+r"(flag)
-        : "i"(LA_CSR_KS3)
+        : "i"(LA_CSR_KS4)
         : "memory");
 }
 
@@ -586,7 +589,7 @@ noinstrument_function static inline_function bool up_interrupt_context(void)
     __asm__ __volatile__(
         "csrrd %0, %1\n\t"
         : "=r" (ctx)
-        : "i" (LA_CSR_KS3)
+        : "i" (LA_CSR_KS4)
         : "memory");
 
     return ctx > 0;

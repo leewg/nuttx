@@ -97,6 +97,6 @@
 #define LS2K0300_IRQ_HPET0   (LA_EXT_IRQ_BASE + 33)
 
 /* Total number of IRQs */
-#define NR_IRQS 128
+#define NR_IRQS 256
 
 #endif /* __ARCH_LOONGARCH_INCLUDE_LS2K300_IRQ_H */

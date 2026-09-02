@@ -62,22 +62,46 @@ static inline uint32_t la64_read_iocsr32(uint32_t addr)
   return val;
 }
 
+void dump_la_csr_info(void)
+{
+  syslog(LOG_INFO, "  LA_CSR_CRMD: 0x%016" PRIx32 "\n",
+      csr_read32(LA_CSR_CRMD));
+  syslog(LOG_INFO, "  LA_CSR_PRMD: 0x%016" PRIx32 "\n",
+      csr_read32(LA_CSR_PRMD));
+  syslog(LOG_INFO, "  LA_CSR_ECFG: 0x%016" PRIx32 "\n",
+      csr_read32(LA_CSR_ECFG));
+  syslog(LOG_INFO, "  LA_CSR_ESTAT: 0x%016" PRIx32 "\n",
+      csr_read32(LA_CSR_ESTAT));
+  syslog(LOG_INFO, "  LA_CSR_TID: 0x%016" PRIx32 "\n",
+      csr_read32(LA_CSR_TMID));
+
+  syslog(LOG_INFO, "  LA_CSR_EENTRY: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_EENTRY));
+  syslog(LOG_INFO, "  LA_CSR_TLBRENTRY: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_TLBRENTRY));
+  syslog(LOG_INFO, "  LA_CSR_MERRENTRY: 0x%016" PRIxPTR "\n",
+      csr_read64(LA_CSR_MERRENTRY));
+}
+
 /****************************************************************************
  * 4. 中断状态读取与打印主函数
  ****************************************************************************/
 
-void dump_loongarch_interrupt_info(void)
+void dump_la_int_info(void)
 {
   /* 1. 读取 CSR 寄存器原始值 */
-  uint64_t crmd  = la64_read_csr(LA_CSR_CRMD);
-  uint64_t ecfg  = la64_read_csr(LA_CSR_ECFG);
-  uint64_t estat = la64_read_csr(LA_CSR_ESTAT);
+  uint32_t crmd, ecfg, estat;
+  uint8_t  crmd_ie;
+  uint16_t ecfg_im, estat_is;
+
+  crmd  = csr_read32(LA_CSR_CRMD);
+  ecfg  = csr_read32(LA_CSR_ECFG);
+  estat = csr_read32(LA_CSR_ESTAT);
 
   /* 2. 解析核心位域 */
-  uint8_t  crmd_ie  = (crmd & CRMD_IE_MASK) >> CRMD_IE_SHIFT;
-  uint16_t ecfg_im  = (ecfg & ECFG_IM_MASK) >> ECFG_IM_SHIFT;
-  uint16_t estat_is = (estat & ESTAT_IS_MASK) >> ESTAT_IS_SHIFT;
-
+  crmd_ie  = (crmd & CRMD_IE_MASK) >> CRMD_IE_SHIFT;
+  ecfg_im  = (ecfg & ECFG_IM_MASK) >> ECFG_IM_SHIFT;
+  estat_is = (estat & ESTAT_IS_MASK) >> ESTAT_IS_SHIFT;
 
   syslog(LOG_INFO, "\n================ LoongArch Interrupt Status Dump ================\n");
 
@@ -91,6 +115,9 @@ void dump_loongarch_interrupt_info(void)
 
   /* --- 打印 ExtIOI 外设中断控制器状态 --- */
   syslog(LOG_INFO, "\n[EXTIOI INTERRUPT CONTROLLER (IOCSR)]\n");
+  UP_DSB();
+  UP_ISB();
+
   uint32_t ext_b19  = readl(0x16000100);
   uint32_t ext_map  = readl(0x160014c0);
   uint32_t ext_en0  = readl(0x16001600);
@@ -104,8 +131,10 @@ void dump_loongarch_interrupt_info(void)
 
   syslog(LOG_INFO, "  ExtIOI_BIT19 (Extern Mode) : 0x%08x\n", ext_b19);
   syslog(LOG_INFO, "  ExtIOI_MAP   (Map Core IP) : 0x%08x\n", ext_map);
-  syslog(LOG_INFO, "  ExtIOI_EN    (EN0 ~ EN3)   : 0x%08x, 0x%08x, 0x%08x, 0x%08x\n", ext_en0, ext_en1, ext_en2, ext_en3);
-  syslog(LOG_INFO, "  ExtIOI_ISR0  (IRS0 ~ ISR3) : 0x%08x, 0x%08x, 0x%08x, 0x%08x\n", ext_isr0, ext_isr1, ext_isr2, ext_isr3);
+  syslog(LOG_INFO, "  ExtIOI_EN    (EN0 ~ EN3)   : 0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
+      ext_en0, ext_en1, ext_en2, ext_en3);
+  syslog(LOG_INFO, "  ExtIOI_ISR0  (IRS0 ~ ISR3) : 0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
+      ext_isr0, ext_isr1, ext_isr2, ext_isr3);
 
   syslog(LOG_INFO, "=================================================================\n\n");
 }

@@ -3,17 +3,19 @@
 #
 
 if ARCH_LOONGARCH
+comment "LoongArch Options"
 
 choice
 	prompt "LoongArch chip selection"
 	default ARCH_CHIP_LOONGARCH_CUSTOM
 
 config ARCH_CHIP_LS2K0300
-	bool "ls2k0300"
+	bool "Loongson 2K0300"
+  select ARCH_LA64
 	select ARCH_HAVE_INTERRUPTSTACK
 	select ARCH_HAVE_CUSTOMOPT
-    select ONESHOT
-    select ONESHOT_COUNT
+  select ONESHOT
+  select ONESHOT_COUNT
 	---help---
 		Loongson 2K0300 single-core processor.
 		Frequency: typically 800MHz - 1.2GHz
@@ -22,11 +24,19 @@ config ARCH_CHIP_LOONGARCH_CUSTOM
     bool "Custom LoongArch chip"
     select ARCH_CHIP_CUSTOM
     ---help---
-       Select this option if there is no directory for the chip under arch/loongarch/src/. 
+       Select this option if there is no directory for the chip under arch/loongarch/src/.
 
 endchoice   # LoongArch chip selection
 
 # Common LoongArch options
+config ARCH_LA32
+  bool
+  default n
+
+config ARCH_LA64
+  bool
+  default y
+  select LIBC_ARCH_ELF_64BIT if LIBC_ARCH_ELF
 
 config ARCH_HAVE_FPU
 	bool
@@ -97,6 +107,11 @@ config PREALLOC_WDOGS
 	default 2
 
 endif
+
+config ARCH_FAMILY
+  string
+  default "la32"  if ARCH_LA32
+  default "la64"  if ARCH_LA64
 
 config ARCH_CHIP
     string

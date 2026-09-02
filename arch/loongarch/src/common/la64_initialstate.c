@@ -71,11 +71,7 @@ void up_initial_state(struct tcb_s *tcb)
 
   if (tcb->pid == IDLE_PROCESS_ID)
   {
-#ifdef CONFIG_SMP
       tcb->stack_alloc_ptr = (void *)g_cpux_idlestack(this_cpu());
-#else
-      tcb->stack_alloc_ptr = (void *)(g_idle_topstack);
-#endif
       tcb->stack_base_ptr  = tcb->stack_alloc_ptr;
       tcb->adj_stack_size  = SMP_STACK_SIZE;
 
@@ -130,6 +126,9 @@ void up_initial_state(struct tcb_s *tcb)
   xcp->regs[REG_ESTAT] = 0x0;
   xcp->regs[REG_CRMD] = DEFAULT_THREAD_CRMD;
   xcp->regs[REG_PRMD] = DEFAULT_THREAD_PRMD;
+  //xcp->regs[REG_CRMD] = csr_read32(LA_CSR_CRMD) | CSR_CRMD_IE;
+  //xcp->regs[REG_PRMD] = csr_read32(LA_CSR_PRMD) | CSR_PRMD_PIE | 0x00;
+  //xcp->regs[REG_ECFG] = csr_read32(LA_CSR_ECFG);
 
 #ifndef CONFIG_BUILD_FLAT
   tcb->xcp.initregs = tcb->xcp.regs;

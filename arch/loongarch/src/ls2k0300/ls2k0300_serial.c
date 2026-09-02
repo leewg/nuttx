@@ -33,12 +33,19 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
-
 #include <nuttx/debug.h>
+
+#ifdef CONFIG_SERIAL_TERMIOS
+#include <termios.h>
+#endif
+
 #include <nuttx/irq.h>
 #include <nuttx/arch.h>
-#include <nuttx/serial/serial.h>
 #include <nuttx/spinlock.h>
+#include <nuttx/init.h>
+#include <nuttx/fs/ioctl.h>
+#include <nuttx/semaphore.h>
+#include <nuttx/serial/serial.h>
 
 #include <arch/board/board.h>
 
@@ -55,6 +62,32 @@
  */
 
 #ifdef USE_SERIALDRIVER
+
+#ifndef CONFIG_UART0_BAUD
+# define CONFIG_UART0_BAUD 115200
+#endif
+
+#ifndef CONFIG_UART0_BITS
+# define CONFIG_UART0_BITS 8
+#endif
+
+#ifndef CONFIG_UART0_PARITY
+# define CONFIG_UART0_PARITY 0
+#endif
+
+#ifndef CONFIG_UART0_2STOP
+# define CONFIG_UART0_2STOP 0
+#endif
+
+#ifndef CONFIG_UART0_RXBUFSIZE
+# define CONFIG_UART0_RXBUFSIZE 256
+#endif
+
+#ifndef CONFIG_UART0_TXBUFSIZE
+# define CONFIG_UART0_TXBUFSIZE 256
+#endif
+
+#define UART_TIMEOUT_MS 100
 
 /* Which UART with be tty0/console and which tty1?  The console will always
  * be ttyS0.  If there is no console then will use the lowest numbered UART.
@@ -92,7 +125,6 @@
 /****************************************************************************
  * Private Types
  ****************************************************************************/
-
 struct up_dev_s
 {
   uintptr_t uartbase; /* Base address of UART registers */
@@ -115,19 +147,19 @@ static void la64_disable_uartint(struct up_dev_s *priv, uint8_t *im);
 
 /* Serial driver methods */
 
-static int  up_setup(struct uart_dev_s *dev);
-static void up_shutdown(struct uart_dev_s *dev);
-static int  up_attach(struct uart_dev_s *dev);
-static void up_detach(struct uart_dev_s *dev);
-static int  up_interrupt(int irq, void *context, void *arg);
-static int  up_ioctl(struct file *filep, int cmd, unsigned long arg);
-static int  up_receive(struct uart_dev_s *dev, uint32_t *status);
-static void up_rxint(struct uart_dev_s *dev, bool enable);
-static bool up_rxavailable(struct uart_dev_s *dev);
-static void up_send(struct uart_dev_s *dev, int ch);
-static void up_txint(struct uart_dev_s *dev, bool enable);
-static bool up_txready(struct uart_dev_s *dev);
-static bool up_txempty(struct uart_dev_s *dev);
+static int  la64_setup(struct uart_dev_s *dev);
+static void la64_shutdown(struct uart_dev_s *dev);
+static int  la64_attach(struct uart_dev_s *dev);
+static void la64_detach(struct uart_dev_s *dev);
+static int  la64_interrupt(int irq, void *context, void *arg);
+static int  la64_ioctl(struct file *filep, int cmd, unsigned long arg);
+static int  la64_receive(struct uart_dev_s *dev, uint32_t *status);
+static void la64_rxint(struct uart_dev_s *dev, bool enable);
+static bool la64_rxavailable(struct uart_dev_s *dev);
+static void la64_send(struct uart_dev_s *dev, int ch);
+static void la64_txint(struct uart_dev_s *dev, bool enable);
+static bool la64_txready(struct uart_dev_s *dev);
+static bool la64_txempty(struct uart_dev_s *dev);
 
 /****************************************************************************
  * Private Data
@@ -135,21 +167,21 @@ static bool up_txempty(struct uart_dev_s *dev);
 
 static const struct uart_ops_s g_uart_ops =
 {
-  .setup          = up_setup,
-  .shutdown       = up_shutdown,
-  .attach         = up_attach,
-  .detach         = up_detach,
-  .ioctl          = up_ioctl,
-  .receive        = up_receive,
-  .rxint          = up_rxint,
-  .rxavailable    = up_rxavailable,
+  .setup          = la64_setup,
+  .shutdown       = la64_shutdown,
+  .attach         = la64_attach,
+  .detach         = la64_detach,
+  .ioctl          = la64_ioctl,
+  .receive        = la64_receive,
+  .rxint          = la64_rxint,
+  .rxavailable    = la64_rxavailable,
 #ifdef CONFIG_SERIAL_IFLOWCONTROL
   .rxflowcontrol  = NULL,
 #endif
-  .send           = up_send,
-  .txint          = up_txint,
-  .txready        = up_txready,
-  .txempty        = up_txempty,
+  .send           = la64_send,
+  .txint          = la64_txint,
+  .txready        = la64_txready,
+  .txempty        = la64_txempty,
 };
 
 /* I/O buffers */
@@ -235,32 +267,10 @@ static void la64_disable_uartint(struct up_dev_s *priv, uint8_t *im)
 
 static void la64_serial_init(struct uart_dev_s *dev)
 {
-  struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-  uint64_t apb_clock = 125000000; //uart use apb clock, 125Mhz default
-  uint64_t brtc;
-  unsigned char cfg;
-
-  la64_serialout(priv, UART_IER, 0x0);
-
-  /* set baud rate */
-  brtc = apb_clock / (16 * (priv->baud));
-
-  cfg = la64_serialin(priv, UART_LCR);
-  la64_serialout(priv, UART_LCR, cfg | UART_LCR_DLAB);
-
-  la64_serialout(priv, UART_DLH, (brtc&0xff));
-  la64_serialout(priv, UART_DLL, ((brtc>>8)&0xff));
-
-  la64_serialout(priv, UART_LCR, cfg & ~UART_LCR_DLAB);
-
-  /* reset FIFO */
-  la64_serialout(priv, UART_FCR, 0x01 | UART_FCR_TXSET | UART_FCR_RXSET);
-
-  la64_serialout(priv, UART_LCR, cfg | UART_LCR_WLS_8);
 }
 
 /****************************************************************************
- * Name: up_setup
+ * Name: la64_setup
  *
  * Description:
  *   Configure the UART baud, bits, parity, etc. This method is called the
@@ -268,20 +278,51 @@ static void la64_serial_init(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static int up_setup(struct uart_dev_s *dev)
+static int la64_setup(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+  uint64_t apb_clock = 120000000; //uart use apb clock, 125Mhz default
+  uint64_t brtc, dec;
+  unsigned char cfg;
 
-  la64_serial_init(dev);
+  la64_serialout(priv, UART_IER, 0x0);
+  la64_serialout(priv, UART_LCR, 0x0);
 
-  /* Enable RX */
-  la64_serialout(priv, UART_IER, UART_IER_IRxE | UART_IER_ILE);
+  /* set baud rate */
+  brtc = apb_clock / priv->baud / 16;
+  dec = apb_clock - (brtc * priv->baud * 16);
+  dec = (dec * 255) / priv->baud / 16;
+
+  la64_serialout(priv, UART_LCR, UART_LCR_DLAB);
+
+  la64_serialout(priv, UART_DLL, (brtc&0xff));
+  la64_serialout(priv, UART_DLH, ((brtc>>8)&0xff));
+  la64_serialout(priv, UART_DLD, dec);
+
+  //cfg = la64_serialin(priv, UART_LCR);
+  //la64_serialout(priv, UART_LCR, cfg & ~UART_LCR_DLAB);
+  la64_serialout(priv, UART_LCR, UART_LCR_WLS_8);
+
+  /* reset FIFO */
+  la64_serialout(priv, UART_FCR, UART_FCR_TL_1B |
+                                 UART_FCR_TXSET |
+                                 UART_FCR_RXSET);
+
+  la64_serialout(priv, UART_IER, 0x0);
+
+  la64_serialout(priv, UART_MCR, 0x0);
+
+  cfg = la64_serialin(priv, UART_LSR);
+  cfg = la64_serialin(priv, UART_RBR);
+  cfg = la64_serialin(priv, UART_MSR);
+
+  priv->im = la64_serialin(priv, UART_IER) & UART_IER_ALL;
 
   return OK;
 }
 
 /****************************************************************************
- * Name: up_shutdown
+ * Name: la64_shutdown
  *
  * Description:
  *   Disable the UART.  This method is called when the serial
@@ -289,7 +330,7 @@ static int up_setup(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static void up_shutdown(struct uart_dev_s *dev)
+static void la64_shutdown(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
@@ -299,7 +340,7 @@ static void up_shutdown(struct uart_dev_s *dev)
 }
 
 /****************************************************************************
- * Name: up_attach
+ * Name: la64_attach
  *
  * Description:
  *   Configure the UART to operation in interrupt driven mode. This method is
@@ -313,16 +354,16 @@ static void up_shutdown(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static int up_attach(struct uart_dev_s *dev)
+static int la64_attach(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
   int ret;
 
   /* Initialize interrupt generation on the peripheral */
 
-  la64_serialout(priv, UART_IER, UART_IER_IRxE | UART_IER_ITxE);
+  //la64_serialout(priv, UART_IER, UART_IER_IRxE | UART_IER_ITxE);
 
-  ret = irq_attach(priv->irq, up_interrupt, dev);
+  ret = irq_attach(priv->irq, la64_interrupt, dev);
 
   if (ret == OK)
   {
@@ -332,12 +373,16 @@ static int up_attach(struct uart_dev_s *dev)
 
     up_enable_irq(priv->irq);
   }
+  else
+  {
+    _err("IRQ attach failed, ret=%d\n", ret);
+  }
 
   return ret;
 }
 
 /****************************************************************************
- * Name: up_detach
+ * Name: la64_detach
  *
  * Description:
  *   Detach UART interrupts.  This method is called when the serial port is
@@ -346,7 +391,7 @@ static int up_attach(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static void up_detach(struct uart_dev_s *dev)
+static void la64_detach(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
 
@@ -360,7 +405,7 @@ static void up_detach(struct uart_dev_s *dev)
 }
 
 /****************************************************************************
- * Name: up_interrupt
+ * Name: la64_interrupt
  *
  * Description:
  *   This is the UART interrupt handler.  It will be invoked when an
@@ -371,12 +416,12 @@ static void up_detach(struct uart_dev_s *dev)
  *
  ****************************************************************************/
 
-static int up_interrupt(int irq, void *context, void *arg)
+static int la64_interrupt(int irq, void *context, void *arg)
 {
   struct uart_dev_s *dev = (struct uart_dev_s *)arg;
-  struct up_dev_s   *priv;
-  uint32_t           status;
-  int                passes;
+  struct up_dev_s *priv;
+  uint32_t status;
+  int passes;
 
   DEBUGASSERT(dev != NULL && dev->priv != NULL);
   priv = (struct up_dev_s *)dev->priv;
@@ -396,13 +441,13 @@ static int up_interrupt(int irq, void *context, void *arg)
           break;
         }
 
-      if (status & UART_IIR_RECV_DATA)
+      if (status & UART_IIR_RxTRIG)
         {
           /* Process incoming bytes */
           uart_recvchars(dev);
         }
 
-      if (status & UART_IIR_THR_EMPTY)
+      if (status & UART_IIR_TxEMPTY)
         {
           /* Process outgoing bytes */
 
@@ -414,20 +459,20 @@ static int up_interrupt(int irq, void *context, void *arg)
 }
 
 /****************************************************************************
- * Name: up_ioctl
+ * Name: la64_ioctl
  *
  * Description:
  *   All ioctl calls will be routed through this method
  *
  ****************************************************************************/
 
-static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
+static int la64_ioctl(struct file *filep, int cmd, unsigned long arg)
 {
   return -ENOTTY;
 }
 
 /****************************************************************************
- * Name: up_receive
+ * Name: la64_receive
  *
  * Description:
  *   Called (usually) from the interrupt level to receive one
@@ -436,38 +481,36 @@ static int up_ioctl(struct file *filep, int cmd, unsigned long arg)
  *
  ****************************************************************************/
 
-static int up_receive(struct uart_dev_s *dev, uint32_t *status)
+static int la64_receive(struct uart_dev_s *dev, uint32_t *status)
 {
-  /* Return status information */
+  struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+  uint32_t rbr;
 
-  if (status)
-    {
-      *status = 0; /* We are not yet tracking serial errors */
-    }
+  /* Return status information */
+  *status = la64_serialin(priv, UART_LSR);
+  rbr = la64_serialin(priv, UART_RBR);
 
   /* Return cached data */
 
-  return g_rxdata;
+  return rbr;
 }
 
 /****************************************************************************
- * Name: up_rxint
+ * Name: la64_rxint
  *
  * Description:
  *   Call to enable or disable RX interrupts
  *
  ****************************************************************************/
 
-static void up_rxint(struct uart_dev_s *dev, bool enable)
+static void la64_rxint(struct uart_dev_s *dev, bool enable)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
   irqstate_t flags = enter_critical_section();
 
   if (enable)
     {
-#ifndef CONFIG_SUPPRESS_SERIAL_INTS
       priv->im |= UART_IER_IRxE;
-#endif
     }
   else
     {
@@ -479,121 +522,99 @@ static void up_rxint(struct uart_dev_s *dev, bool enable)
 }
 
 /****************************************************************************
- * Name: up_rxavailable
+ * Name: la64_rxavailable
  *
  * Description:
  *   Return true if the receive register is not empty
  *
  ****************************************************************************/
 
-static bool up_rxavailable(struct uart_dev_s *dev)
+static bool la64_rxavailable(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-  uint32_t dr = 0;
 
   /* Return true is data is available in the receive data buffer */
 
-  uint32_t rxdata = la64_serialin(priv, UART_RBR);
-
-  g_rxdata = rxdata & 0xff;
-
-  dr = la64_serialin(priv, UART_LSR) & UART_LSR_DR;
-
-  return !!dr;
+  return la64_serialin(priv, UART_LSR) & UART_LSR_DR;
 }
 
 /****************************************************************************
- * Name: up_send
+ * Name: la64_send
  *
  * Description:
  *   This method will send one byte on the UART.
  *
  ****************************************************************************/
 
-static void up_send(struct uart_dev_s *dev, int ch)
+static void la64_send(struct uart_dev_s *dev, int ch)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+
   la64_serialout(priv, UART_THR, (uint32_t)ch);
 }
 
 /****************************************************************************
- * Name: up_txint
+ * Name: la64_txint
  *
  * Description:
  *   Call to enable or disable TX interrupts
  *
  ****************************************************************************/
 
-static void up_txint(struct uart_dev_s *dev, bool enable)
+static void la64_txint(struct uart_dev_s *dev, bool enable)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
   irqstate_t flags;
 
   flags = enter_critical_section();
   if (enable)
-    {
-      /* Enable the TX interrupt */
-
-#ifndef CONFIG_SUPPRESS_SERIAL_INTS
-      priv->im |= UART_IER_ITxE;
-      la64_serialout(priv, UART_IER, priv->im);
-
-      /* Fake a TX interrupt here by just calling uart_xmitchars() with
-       * interrupts disabled (note this may recurse).
-       */
-
-      uart_xmitchars(dev);
-#endif
-    }
+  {
+    /* Enable the TX interrupt */
+    priv->im |= UART_IER_ITxE;
+  }
   else
-    {
-      /* Disable the TX interrupt */
+  {
+    /* Disable the TX interrupt */
+    priv->im &= ~UART_IER_ITxE;
+  }
 
-      priv->im &= ~UART_IER_ITxE;
-      la64_serialout(priv, UART_IER, priv->im);
-    }
+  la64_serialout(priv, UART_IER, priv->im);
 
   leave_critical_section(flags);
 }
 
 /****************************************************************************
- * Name: up_txready
+ * Name: la64_txready
  *
  * Description:
  *   Return true if the tranmsit data register is not full
  *
  ****************************************************************************/
 
-static bool up_txready(struct uart_dev_s *dev)
+static bool la64_txready(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+  uint8_t lsr = la64_serialin(priv, UART_LSR);
 
   /* Return TRUE if the TX FIFO is not full */
 
-  return !!(la64_serialin(priv, UART_LSR) & UART_LSR_TFE);
+  return (lsr & UART_LSR_TFE) != 0;
 }
 
 /****************************************************************************
- * Name: up_txempty
+ * Name: la64_txempty
  *
  * Description:
  *   Return true if the tranmsit data register is empty
  *
  ****************************************************************************/
 
-static bool up_txempty(struct uart_dev_s *dev)
+static bool la64_txempty(struct uart_dev_s *dev)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
-  uint8_t status = la64_serialin(priv, UART_LSR);
+  uint8_t lsr = la64_serialin(priv, UART_LSR);
 
-  if (status & (UART_LSR_TE | UART_LSR_TFE))
-  {
-    return true;
-  }
-  else
-  {
-    return false;
-  }
+  return (lsr & UART_LSR_TE) != 0;
 }
 
 /****************************************************************************
@@ -629,7 +650,7 @@ void la64_earlyserialinit(void)
 
 #ifdef HAVE_SERIAL_CONSOLE
   CONSOLE_DEV.isconsole = true;
-  up_setup(&CONSOLE_DEV);
+  la64_setup(&CONSOLE_DEV);
 #endif
 }
 #endif
@@ -673,9 +694,21 @@ void up_putc(int ch)
   struct up_dev_s *priv = (struct up_dev_s *)CONSOLE_DEV.priv;
   uint8_t imr;
 
+  if (up_interrupt_context())
+  {
+    la64_lowputc(ch);
+  }
+  else
+  {
+    irqstate_t flags = spin_lock_irqsave(&priv->lock);
+      la64_lowputc(ch);
+    spin_unlock_irqrestore(&priv->lock, flags);
+  }
+  /*
   la64_disable_uartint(priv, &imr);
   la64_lowputc(ch);
   la64_restore_uartint(priv, imr);
+  */
 #endif
 }
 

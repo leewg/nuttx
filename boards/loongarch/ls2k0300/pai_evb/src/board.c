@@ -364,6 +364,8 @@ void board_initialize(void)
 #ifdef CONFIG_BOARD_LATE_INITIALIZE
 void board_late_initialize(void)
 {
+
+  return ;
     /* Initialize NAND Flash (optional) */
 #ifdef CONFIG_PAI_EVB_HAVE_NAND
     pai_evb_nand_initialize();

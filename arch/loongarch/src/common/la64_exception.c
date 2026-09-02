@@ -207,6 +207,8 @@ uint64_t *la64_vint_handler(uint64_t *regs)
   uint32_t estat = csr_read32(LA_CSR_ESTAT);
   uint32_t irq = (estat & 0x3fff);
 
+  up_set_interrupt_context(true);
+
   syslog(LOG_EMERG, "VINT! ESTAT = 0x%x, irq = 0x%x\n", estat, irq);
 
   if ((estat & CSR_ESTAT_IS) == 0) {
@@ -230,6 +232,11 @@ uint64_t *la64_vint_handler(uint64_t *regs)
   regs = la64_doirq(irq, regs);
 
   percpu->cur_regs = 0;
+
+  up_set_interrupt_context(false);
+
+  syslog(LOG_EMERG, "VINT END! crmd = 0x%x, ecfg = 0x\n",
+      csr_read32(LA_CSR_CRMD), csr_read32(LA_CSR_ECFG));
 
   return regs;
 }

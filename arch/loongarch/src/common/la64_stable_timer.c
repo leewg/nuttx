@@ -79,6 +79,7 @@ static unsigned int hda_1us_cnt = 30;
 static int la64_timer_interrupt(int irq, void *context, void *arg)
 {
   /* Process timer interrupt */
+  up_putc('+');
 
   nxsched_process_timer();
 
@@ -119,8 +120,8 @@ void up_timer_initialize(void)
 
     mcsr2 = csr_read64(LA_CSR_MCSR2);
     hda_freq = (unsigned int)(mcsr2 & MCSR2_CCFREQ);
-    mul = mcsr2 & MCSR2_CCMUL;
-    div = mcsr2 & MCSR2_CCDIV;
+    mul = (mcsr2 >> MCSR2_CCMUL_SHIFT) & 0xFFFF;
+    div = (mcsr2 >> MCSR2_CCDIV_SHIFT) & 0xFFFF;
     if (div && mul)
     {
       hda_freq = hda_freq * mul /div;

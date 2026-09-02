@@ -94,8 +94,8 @@
  * 8250/16550 UART Register Offsets (Compatible)
  */
 
-#define UART_RBR    0x00    /* Receiver Buffer Register */
 #define UART_THR    0x00    /* Transmitter Holding Register */
+#define UART_RBR    0x00    /* Receiver Buffer Register */
 #define UART_DLL    0x00    /* Divisor Latch Low (DLAB=1) */
 #define UART_DLH    0x01    /* Divisor Latch High (DLAB=1) */
 #define UART_IER    0x01    /* Interrupt Enable Register */
@@ -108,32 +108,38 @@
 #define UART_MSR    0x06    /* Modem Status Register */
 
 /* IER bits */
-#define UART_IER_IRxE   (0x1 << 0)
-#define UART_IER_ITxE   (0x1 << 1)
-#define UART_IER_ILE    (0x1 << 2)
-#define UART_IER_IME    (0x1 << 3)
-#define UART_IER_RXDE   (0x1 << 4)
-#define UART_IER_TXDE   (0x1 << 5)
-#define UART_IER_ARTSE  (0x1 << 6)
-#define UART_IER_ACTSE  (0x1 << 7)
+#define UART_IER_IRxE   (1 << 0)
+#define UART_IER_ITxE   (1 << 1)
+#define UART_IER_ILE    (1 << 2)
+#define UART_IER_IME    (1 << 3)
+#define UART_IER_RXDE   (1 << 4)
+#define UART_IER_TXDE   (1 << 5)
+#define UART_IER_ARTSE  (1 << 6)
+#define UART_IER_ACTSE  (1 << 7)
+#define UART_IER_ALL    (UART_IER_IRxE | UART_IER_ITxE | UART_IER_ILE | \
+                         UART_IER_IME | UART_IER_RXDE | UART_IER_TXDE | \
+                         UART_IER_ARTSE | UART_IER_ACTSE)
 
 /* IIR bits */
-#define UART_IIR_THR_EMPTY  (0x2)
-#define UART_IIR_RECV_DATA  (0x4)
-#define UART_IIR_RECV_LINE  (0x6)
-#define UART_IIR_CHAR_TIMEOUT (0xc)
+#define UART_IIR_RxSR         (0x6)
+#define UART_IIR_RxTRIG       (0x4)
+#define UART_IIR_TxTIMEOUT    (0xc)
+#define UART_IIR_TxEMPTY      (0x2)
+#define UART_IIR_MSR          (0x0)
+#define UART_IIR_INTp         (1 << 0)
 
 /**
  * UART Line Status Register (LSR) bits
  */
 
-#define UART_LSR_DR     0x01    /* Data Ready */
-#define UART_LSR_OE     0x02    /* Overrun Error */
-#define UART_LSR_PE     0x04    /* Parity Error */
-#define UART_LSR_FE     0x08    /* Framing Error */
-#define UART_LSR_BI     0x10    /* Break Interrupt */
-#define UART_LSR_TFE    0x20    /* TX FIFO Empty */
-#define UART_LSR_TE     0x40    /* TX transmit Empty */
+#define UART_LSR_DR     (1 << 0)    /* Data Ready */
+#define UART_LSR_OE     (1 << 1)    /* Overrun Error */
+#define UART_LSR_PE     (1 << 2)    /* Parity Error */
+#define UART_LSR_FE     (1 << 3)    /* Framing Error */
+#define UART_LSR_BI     (1 << 4)    /* Break Interrupt */
+#define UART_LSR_TFE    (1 << 5)    /* TX FIFO Empty */
+#define UART_LSR_TE     (1 << 6)    /* TX transmit Empty */
+#define UART_LSR_ERR    (1 << 7)    /* FIFO Error */
 
 /**
  * UART Line Control Register (LCR) bits
@@ -152,10 +158,10 @@
 #define UART_LCR_BKSE     0x80  /* Bank select enable */
 #define UART_LCR_DLAB     0x80  /* Divisor latch access bit */
 
-#define UART_FCR_TL_B1 (0x0 << 6)
-#define UART_FCR_TL_B2 (0x1 << 6)
-#define UART_FCR_TL_B3 (0x2 << 6)
-#define UART_FCR_TL_B4 (0x3 << 6)
+#define UART_FCR_TL_1B (0x0 << 6)
+#define UART_FCR_TL_2B (0x1 << 6)
+#define UART_FCR_TL_3B (0x2 << 6)
+#define UART_FCR_TL_4B (0x3 << 6)
 #define UART_FCR_TXSET (0x1 << 2)
 #define UART_FCR_RXSET (0x1 << 1)
 

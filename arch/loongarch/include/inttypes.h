@@ -31,91 +31,117 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
+#if defined(CONFIG_ARCH_LA32)
+#define _PRI32PREFIX  "l"
+#define _PRI64PREFIX  "ll"
+#define _PRIPTRPREFIX
+#define _SCN32PREFIX "l"
+#define _SCN64PREFIX "ll"
+#define _SCNPTRPREFIX
+#define INT32_C(x)  x ## l
+#define INT64_C(x)  x ## ll
+#define UINT32_C(x) x ## ul
+#define UINT64_C(x) x ## ull
+#elif defined(CONFIG_ARCH_LA64)
+#define _PRI32PREFIX
+#define _PRI64PREFIX  "l"
+#define _PRIPTRPREFIX "l"
+#define _SCN32PREFIX
+#define _SCN64PREFIX "l"
+#define _SCNPTRPREFIX "l"
+#define INT32_C(x)  x
+#define INT64_C(x)  x ## l
+#define UINT32_C(x) x ## u
+#define UINT64_C(x) x ## ul
+#endif
+
 #define PRId8       "d"
 #define PRId16      "d"
-#define PRId32      "d"
-#define PRId64      "ld"
+#define PRId32      _PRI32PREFIX "d"
+#define PRId64      _PRI64PREFIX "d"
 
-#define PRIdPTR     PRId64
+#define PRIdPTR     _PRIPTRPREFIX "d"
 
 #define PRIi8       "i"
 #define PRIi16      "i"
-#define PRIi32      "i"
-#define PRIi64      "li"
+#define PRIi32      _PRI32PREFIX "i"
+#define PRIi64      _PRI64PREFIX "i"
 
-#define PRIiPTR     PRIi64
+#define PRIiPTR     _PRIPTRPREFIX "i"
 
 #define PRIo8       "o"
 #define PRIo16      "o"
-#define PRIo32      "o"
-#define PRIo64      "lo"
+#define PRIo32      _PRI32PREFIX "o"
+#define PRIo64      _PRI64PREFIX "o"
 
-#define PRIoPTR     PRIo64
+#define PRIoPTR     _PRIPTRPREFIX "o"
 
 #define PRIu8       "u"
 #define PRIu16      "u"
-#define PRIu32      "u"
-#define PRIu64      "lu"
+#define PRIu32      _PRI32PREFIX "u"
+#define PRIu64      _PRI64PREFIX "u"
 
-#define PRIuPTR     PRIu64
+#define PRIuPTR     _PRIPTRPREFIX "u"
 
 #define PRIx8       "x"
 #define PRIx16      "x"
-#define PRIx32      "x"
-#define PRIx64      "lx"
+#define PRIx32      _PRI32PREFIX "x"
+#define PRIx64      _PRI64PREFIX "x"
 
-#define PRIxPTR     PRIx64
+#define PRIxPTR     _PRIPTRPREFIX "x"
 
 #define PRIX8       "X"
 #define PRIX16      "X"
-#define PRIX32      "X"
-#define PRIX64      "lX"
+#define PRIX32      _PRI32PREFIX "X"
+#define PRIX64      _PRI64PREFIX "X"
 
-#define PRIXPTR     PRIX64
+#define PRIXPTR     _PRIPTRPREFIX "X"
 
 #define SCNd8       "hhd"
 #define SCNd16      "hd"
-#define SCNd32      "d"
-#define SCNd64      "ld"
+#define SCNd32      _SCN32PREFIX "d"
+#define SCNd64      _SCN64PREFIX "d"
 
-#define SCNdPTR     SCNd64
+#define SCNdPTR     _SCNPTRPREFIX "d"
 
 #define SCNi8       "hhi"
 #define SCNi16      "hi"
-#define SCNi32      "i"
-#define SCNi64      "li"
+#define SCNi32      _SCN32PREFIX "i"
+#define SCNi64      _SCN64PREFIX "i"
 
-#define SCNiPTR     SCNi64
+#define SCNiPTR     _SCNPTRPREFIX "i"
 
 #define SCNo8       "hho"
 #define SCNo16      "ho"
-#define SCNo32      "o"
-#define SCNo64      "lo"
+#define SCNo32      _SCN32PREFIX "o"
+#define SCNo64      _SCN64PREFIX "o"
 
-#define SCNoPTR     SCNo64
+#define SCNoPTR     _SCN64PREFIX "o"
 
 #define SCNu8       "hhu"
 #define SCNu16      "hu"
-#define SCNu32      "u"
-#define SCNu64      "lu"
+#define SCNu32      _SCN32PREFIX "u"
+#define SCNu64      _SCN64PREFIX "u"
 
-#define SCNuPTR     SCNu64
+#define SCNuPTR     _SCN64PREFIX "u"
 
 #define SCNx8       "hhx"
 #define SCNx16      "hx"
-#define SCNx32      "x"
-#define SCNx64      "lx"
+#define SCNx32      _SCN32PREFIX "x"
+#define SCNx64      _SCN64PREFIX "x"
 
-#define SCNxPTR     SCNx64
+#define SCNxPTR     _SCN64PREFIX "x"
 
 #define INT8_C(x)    x
 #define INT16_C(x)   x
-#define INT32_C(x)   x
-#define INT64_C(x)   x ## l
 
 #define UINT8_C(x)   x
 #define UINT16_C(x)  x
-#define UINT32_C(x)  x ## u
-#define UINT64_C(x)  x ## ul
+
+#ifdef CONFIG_ARCH_LA32
+#define PRIxREG "08"  PRIx32
+#else
+#define PRIxREG "016" PRIx64
+#endif
 
 #endif /* __ARCH_LOONGARCH_INCLUDE_INTTYPES_H */

@@ -59,6 +59,19 @@ config ARCH_HC
 	---help---
 		Freescale HC architectures (M9S12)
 
+config ARCH_LOONGARCH
+	bool "LoongArch"
+	select ARCH_HAVE_BACKTRACE
+	select ARCH_HAVE_INTERRUPTSTACK
+  select ARCH_HAVE_STACKCHECK
+	select ARCH_HAVE_CUSTOMOPT
+	select ARCH_HAVE_STDARG_H
+	select ARCH_HAVE_SETJMP
+	select ARCH_HAVE_TCBINFO
+	select ARCH_TOOLCHAIN_GNU
+	---help---
+		LoongArch architecture for Loongson processors.
+
 config ARCH_MIPS
 	bool "MIPS"
 	select ARCH_HAVE_INTERRUPTSTACK
@@ -211,41 +224,29 @@ config ARCH_TRICORE
 	---help---
 		Infineon 32-bit AURIX TriCore architectures
 
-config ARCH_LOONGARCH
-	bool "LoongArch"
-	select ARCH_64BIT
-	select ARCH_HAVE_INTERRUPTSTACK
-	select ARCH_HAVE_CUSTOMOPT
-	select ARCH_HAVE_STDARG_H
-	select ARCH_HAVE_SETJMP
-	select ARCH_HAVE_BACKTRACE
-	select ARCH_HAVE_TCBINFO
-	select ARCH_TOOLCHAIN_GNU
-	---help---
-		LoongArch64 64-bit RISC-like architecture for Loongson processors.
 
 endchoice
 
 config ARCH
 	string
-	default "arm"     if ARCH_ARM
-	default "arm64"   if ARCH_ARM64
-	default "avr"     if ARCH_AVR
-	default "hc"      if ARCH_HC
-	default "mips"    if ARCH_MIPS
-	default "misoc"   if ARCH_MISOC
-	default "renesas" if ARCH_RENESAS
-	default "risc-v"  if ARCH_RISCV
-	default "sim"     if ARCH_SIM
-	default "x86"     if ARCH_X86
-	default "x86_64"  if ARCH_X86_64
-	default "xtensa"  if ARCH_XTENSA
-	default "z16"     if ARCH_Z16
-	default "z80"     if ARCH_Z80
-	default "or1k"    if ARCH_OR1K
-	default "sparc"   if ARCH_SPARC
-	default "tricore" if ARCH_TRICORE
-    default "loongarch" if ARCH_LOONGARCH
+	default "arm"       if ARCH_ARM
+	default "arm64"     if ARCH_ARM64
+	default "avr"       if ARCH_AVR
+	default "hc"        if ARCH_HC
+  default "loongarch" if ARCH_LOONGARCH
+	default "mips"      if ARCH_MIPS
+	default "misoc"     if ARCH_MISOC
+	default "renesas"   if ARCH_RENESAS
+	default "risc-v"    if ARCH_RISCV
+	default "sim"       if ARCH_SIM
+	default "x86"       if ARCH_X86
+	default "x86_64"    if ARCH_X86_64
+	default "xtensa"    if ARCH_XTENSA
+	default "z16"       if ARCH_Z16
+	default "z80"       if ARCH_Z80
+	default "or1k"      if ARCH_OR1K
+	default "sparc"     if ARCH_SPARC
+	default "tricore"   if ARCH_TRICORE
 
 if ARCH_ARM
 source "arch/arm/Kconfig"

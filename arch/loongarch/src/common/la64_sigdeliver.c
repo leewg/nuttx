@@ -109,7 +109,8 @@ retry:
    * errno that is needed by the user logic (it is probably EINTR).
    */
 
-  sinfo("Resuming \n");
+  sinfo("Resuming EPC: %" PRIxREG " INT_CTX: %" PRIxREG "\n",
+      regs[REG_ERA], regs[REG_PRMD]);
 
 #ifdef CONFIG_SMP
   /* Restore the saved 'irqcount' and recover the critical section

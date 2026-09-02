@@ -291,11 +291,11 @@
 #define EXC_KSAVE_MASK			(1 << 0 | 1 << 1 | 1 << 2)
 
 /* Percpu-data base allocated KS3 statically */
-#define PERCPU_BASE_KS			LA_CSR_KS3
+#define PERCPU_BASE_KS3			LA_CSR_KS3
 #define PERCPU_KSAVE_MASK		(1 << 3)
 
 /* Flag indicate whether in interrupt context */
-#define PERCPU_BASE_KS			LA_CSR_KS4
+#define IN_INTERRUPT_KS4			LA_CSR_KS4
 #define PERCPU_KSAVE_MASK		(1 << 4)
 
 /* Timer Registers */

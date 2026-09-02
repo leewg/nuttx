@@ -58,14 +58,12 @@ void up_irqinitialize(void)
 {
   uint64_t val;
 
-  up_irq_save();
-
   /* enable extioi mode */
   putreg32(getreg32(CHIP_CTRL0_BASE)|EXTIOI_ENABLE, CHIP_CTRL0_BASE);
 
-  /* mask IPI */
+  /* mask all INT */
   val = read_csr_ecfg();
-  val &= ~0x3fff;
+  val &= ~0x1fff;
   write_csr_ecfg(val);
 
   /* disable all extern interrupt */
@@ -98,9 +96,9 @@ void up_irqinitialize(void)
   /* Attach the common interrupt handler */
   la64_exception_attach();
 
-  /* enable all IPIs */
+  /* enable all INT */
   val = read_csr_ecfg();
-  val |= 0x3fff;
+  val |= 0x1fff;
   write_csr_ecfg(val);
 
   /* Colorize the interrupt stack for debug purposes */
@@ -118,10 +116,9 @@ void up_irqinitialize(void)
   //putreg32(0x3f, INTC_BASE + LS2K0300_EXTIOI_IEN2);
 
   //la64_color_intstack();
-  up_irq_enable();
+  //up_irq_enable();
 #endif
 
-  up_irq_enable();
 }
 
 /****************************************************************************
@@ -164,10 +161,11 @@ void up_disable_irq(int irq)
 void up_enable_irq(int irq)
 {
   uint32_t extirq = 0, base = 0, offs = 0;
-  uint32_t val;
+  uint32_t val, bit;
 
-  if (irq < LA_EXT_IRQ_BASE)
+  if (irq > LA_LOC_IRQ_BASE && irq < LA_LOC_IRQ_BASE + 16)
   {
+    bit = irq - LA_LOC_IRQ_BASE;
     val = read_csr_ecfg();
     val |= (0x1 << irq);
     write_csr_ecfg(val);

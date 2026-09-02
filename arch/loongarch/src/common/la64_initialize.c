@@ -60,6 +60,7 @@ uintptr_t g_idle_topstack = (uintptr_t)_ebss + SMP_STACK_SIZE * CONFIG_SMP_NCPUS
 void up_initialize(void)
 {
   /* Add any extra memory fragments to the memory manager */
+  up_putc('P');
 
   la64_addregion();
 

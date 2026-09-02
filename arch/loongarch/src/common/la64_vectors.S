@@ -94,6 +94,8 @@ BUILD_INT_VECTOR 13  /* EENTRY + 0x680: PMC  */
 
   .text
 SYM_FUNC_START(common_int_handler)
+  li.w  a0, 'I'
+  bl up_putc
   SAVE_ALL
   move  a0, sp
   la.pcrel t0, la64_vint_handler
@@ -104,6 +106,8 @@ SYM_FUNC_START(common_int_handler)
 SYM_FUNC_END(common_int_handler)
 
 SYM_FUNC_START(real_exception_entry)
+  li.w  a0, 'E'
+  bl up_putc
   SAVE_ALL
   move  a0, sp
   la.pcrel t0, la64_exception_handler
@@ -114,6 +118,8 @@ SYM_FUNC_START(real_exception_entry)
 SYM_FUNC_END(real_exception_entry)
 
 SYM_FUNC_START(real_machine_error_entry)
+  li.w  a0, 'M'
+  bl up_putc
   csrrd t1, LA_CSR_MERRCTL
   andi  t1, t1, 0x1
   beqz  t1, lbl_merr_return
@@ -131,6 +137,10 @@ lbl_merr_return:
 SYM_FUNC_END(real_machine_error_entry)
 
 SYM_FUNC_START(real_tlbrefill_error_entry)
+
+  li.w  a0, 'T'
+  bl up_putc
+
   csrrd t8, LA_CSR_TLBRSAVE
   SAVE_ALL
 

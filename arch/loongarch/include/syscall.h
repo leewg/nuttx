@@ -52,7 +52,7 @@
  */
 
 #ifndef CONFIG_BUILD_FLAT
-#  define CONFIG_SYS_RESERVED 6
+#  define CONFIG_SYS_RESERVED 8
 #else
 #  define CONFIG_SYS_RESERVED 4
 #endif
@@ -130,8 +130,8 @@ extern "C"
 
 static inline uintptr_t sys_call0(unsigned int nbr)
 {
-  register long sys_nr __asm__("$r11") = nbr;
-  register long ret    __asm__("$r4");
+  register long sys_nr __asm__("a7") = nbr;
+  register long ret    __asm__("a0");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -157,9 +157,9 @@ static inline uintptr_t sys_call0(unsigned int nbr)
 
 static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
 {
-  register long sys_nr __asm__("$r11") = nbr;
-  register long arg1   __asm__("$r4")  = (long)parm1;
-  register long ret    __asm__("$r4");
+  register long sys_nr __asm__("a0") = nbr;
+  register long arg1   __asm__("a1")  = (long)parm1;
+  register long ret    __asm__("a7");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -186,10 +186,10 @@ static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
 static inline uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2)
 {
-  register long sys_nr __asm__("$r11") = nbr;
-  register long arg1   __asm__("$r4")  = (long)parm1;
-  register long arg2   __asm__("$r5")  = (long)parm2;
-  register long ret    __asm__("$r4");
+  register long sys_nr __asm__("a0") = nbr;
+  register long arg1   __asm__("a1")  = (long)parm1;
+  register long arg2   __asm__("a2")  = (long)parm2;
+  register long ret    __asm__("a7");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -216,11 +216,11 @@ static inline uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1,
 static inline uintptr_t sys_call3(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3)
 {
-  register long sys_nr __asm__("$r11") = nbr;
-  register long arg1   __asm__("$r4")  = (long)parm1;
-  register long arg2   __asm__("$r5")  = (long)parm2;
-  register long arg3   __asm__("$r6")  = (long)parm3;
-  register long ret    __asm__("$r4");
+  register long sys_nr __asm__("a0") = nbr;
+  register long arg1   __asm__("a1")  = (long)parm1;
+  register long arg2   __asm__("a2")  = (long)parm2;
+  register long arg3   __asm__("a3")  = (long)parm3;
+  register long ret    __asm__("a7");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -248,12 +248,12 @@ static inline uintptr_t sys_call4(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3,
                                   uintptr_t parm4)
 {
-  register long sys_nr __asm__("$r11") = nbr;
-  register long arg1   __asm__("$r4")  = (long)parm1;
-  register long arg2   __asm__("$r5")  = (long)parm2;
-  register long arg3   __asm__("$r6")  = (long)parm3;
-  register long arg4   __asm__("$r7")  = (long)parm4;
-  register long ret    __asm__("$r4");
+  register long sys_nr __asm__("a0") = nbr;
+  register long arg1   __asm__("a1")  = (long)parm1;
+  register long arg2   __asm__("a2")  = (long)parm2;
+  register long arg3   __asm__("a3")  = (long)parm3;
+  register long arg4   __asm__("a4")  = (long)parm4;
+  register long ret    __asm__("a7");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -281,13 +281,13 @@ static inline uintptr_t sys_call5(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3,
                                   uintptr_t parm4, uintptr_t parm5)
 {
-  register long sys_nr __asm__("$r11") = nbr;
-  register long arg1   __asm__("$r4")  = (long)parm1;
-  register long arg2   __asm__("$r5")  = (long)parm2;
-  register long arg3   __asm__("$r6")  = (long)parm3;
-  register long arg4   __asm__("$r7")  = (long)parm4;
-  register long arg5   __asm__("$r8")  = (long)parm5;
-  register long ret    __asm__("$r4");
+  register long sys_nr __asm__("a0") = nbr;
+  register long arg1   __asm__("a1")  = (long)parm1;
+  register long arg2   __asm__("a2")  = (long)parm2;
+  register long arg3   __asm__("a3")  = (long)parm3;
+  register long arg4   __asm__("a4")  = (long)parm4;
+  register long arg5   __asm__("a5")  = (long)parm5;
+  register long ret    __asm__("a7");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -316,14 +316,14 @@ static inline uintptr_t sys_call6(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm4, uintptr_t parm5,
                                   uintptr_t parm6)
 {
-  register long sys_nr __asm__("$r11") = nbr;
-  register long arg1   __asm__("$r4")  = (long)parm1;
-  register long arg2   __asm__("$r5")  = (long)parm2;
-  register long arg3   __asm__("$r6")  = (long)parm3;
-  register long arg4   __asm__("$r7")  = (long)parm4;
-  register long arg5   __asm__("$r8")  = (long)parm5;
-  register long arg6   __asm__("$r9")  = (long)parm6;
-  register long ret    __asm__("$r4");
+  register long sys_nr __asm__("a0") = nbr;
+  register long arg1   __asm__("a1")  = (long)parm1;
+  register long arg2   __asm__("a2")  = (long)parm2;
+  register long arg3   __asm__("a3")  = (long)parm3;
+  register long arg4   __asm__("a4")  = (long)parm4;
+  register long arg5   __asm__("a5")  = (long)parm5;
+  register long arg6   __asm__("a6")  = (long)parm6;
+  register long ret    __asm__("a7");
 
   __asm__ __volatile__ (
       "syscall 0\n"
