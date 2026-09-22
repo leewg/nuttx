@@ -35,7 +35,7 @@ CMN_CSRCS += la64_idle.c la64_exit.c la64_switchcontext.c
 CMN_CSRCS += la64_nputs.c la64_registerdump.c
 CMN_CSRCS += la64_stable_timer.c
 
-CMN_CSRCS += la64_exception.c la64_doirq.c
+CMN_CSRCS += la64_exception.c la64_doirq.c la64_swint.c
 CMN_CSRCS += la64_percpu.c
 
 CMN_CSRCS += la64_debug.c

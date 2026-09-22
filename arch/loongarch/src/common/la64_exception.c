@@ -51,6 +51,11 @@ typedef uintptr_t (*syscall_t)(unsigned int, ...);
 
 #define ECFG_VS_128B        (7 << CSR_ECFG_VS_SHIFT)
 
+void la64_exception_attach(void)
+{
+  irq_attach(LA_IRQ_SWI0, la64_swint, NULL);
+  irq_attach(LA_IRQ_SWI1, la64_swint, NULL);
+}
 
 /****************************************************************************
  * Name: trap_init
@@ -101,8 +106,15 @@ uintptr_t la64_syscall_dispatch(unsigned int nbr, uint64_t arg0, uint64_t arg1,
     syscall_t do_syscall;
     uintptr_t ret;
 
-    syslog(LOG_EMERG, "SYSCALL! ESTAT = 0x%x, nbr = 0x%x\n",
-        csr_read32(LA_CSR_ESTAT), nbr);
+    syslog(LOG_EMERG, "SYSCALL! ESTAT = 0x%x, nbr = 0x%x\n", csr_read32(LA_CSR_ESTAT), nbr);
+
+#if defined(CONFIG_LIB_SYSCALL)
+  if(nbr == SYS_switch_context)
+  {
+    struct tcb_s *wtcb = (struct tcb_s *)arg0;
+    return (uintptr_t)wtcb->xcp.regs;
+  }
+#endif
 
     /* Valid system call ? */
     if (nbr > SYS_maxsyscall)
@@ -168,20 +180,67 @@ static void la64_regs_dump(uint64_t *regs)
 
 uint64_t *la64_exception_handler(uint64_t *regs)
 {
+#if 1
   uint32_t estat = csr_read32(LA_CSR_ESTAT);
+  uint32_t crmd = csr_read32(LA_CSR_CRMD);
+  uint32_t prmd = csr_read32(LA_CSR_PRMD);
   uint32_t ecode = (estat & CSR_ESTAT_EXC) >> CSR_ESTAT_EXC_SHIFT;
+#else
+  uint32_t estat,crmd,prmd,ecode;
+  estat = crmd = prmd = ecode =0x0;
+#endif
 
-  syslog(LOG_EMERG, "Exception! ESTAT = 0x%x, ECODE = 0x%x\n", estat, ecode);
+  syslog(LOG_EMERG, "Exception! ESTAT = 0x%lx, ECODE = 0x%lx, CRMD = 0x%lx, PRMD = 0x%lx\n", estat, ecode, crmd, prmd);
 
   if (ecode == 0xb)
   {
+    unsigned int nbr = (unsigned int)regs[REG_A7];
+
+    if (nbr == SYS_switch_context)
+    {
+      uint64_t **saveregs = (uint64_t **)regs[REG_A0];
+      uintptr_t arg1 = (uintptr_t)regs[REG_A1];
+      uint64_t *next_regs = NULL;
+
+      if (saveregs != NULL)
+      {
+        *saveregs = regs;
+      }
+
+      struct tcb_s *wtcb  = (struct tcb_s *)arg1;
+      if (wtcb != NULL && wtcb->xcp.regs != NULL)
+      {
+        next_regs = (uint64_t *)wtcb->xcp.regs;
+      }
+      else
+      {
+        next_regs = (uint64_t *)arg1;
+      }
+
+      syslog(LOG_EMERG, "Switch Context: current regs=%p, next regs=%p\r\n",
+          regs, next_regs);
+
+      DEBUGASSERT(next_regs != NULL);
+
+      return next_regs;
+    }
+    else if (nbr == SYS_restore_context)
+    {
+      struct tcb_s *wtcb = (struct tcb_s *)regs[REG_A0];
+      if (wtcb != NULL && wtcb->xcp.regs !=NULL)
+      {
+        return (uint64_t *)wtcb->xcp.regs;
+      }
+      return (uint64_t *)regs[REG_A0];
+    }
+
     regs[REG_ERA] += 4;
-    uintptr_t ret = la64_syscall_dispatch((unsigned int)regs[REG_A0],
-        regs[REG_A1], regs[REG_A2], regs[REG_A3], regs[REG_A4],
-        regs[REG_A5], regs[REG_A6], regs);
+
+    uintptr_t ret = la64_syscall_dispatch(nbr,
+        regs[REG_A0], regs[REG_A1], regs[REG_A2], regs[REG_A3],
+        regs[REG_A4], regs[REG_A5], regs);
 
     regs[REG_A0] = (uint64_t)ret;
-
     return regs;
   }
 
@@ -212,6 +271,8 @@ uint64_t *la64_vint_handler(uint64_t *regs)
   syslog(LOG_EMERG, "VINT! ESTAT = 0x%x, irq = 0x%x\n", estat, irq);
 
   if ((estat & CSR_ESTAT_IS) == 0) {
+    up_set_interrupt_context(false);
+    percpu->cur_regs = 0;
     return regs;
   }
 
@@ -226,6 +287,8 @@ uint64_t *la64_vint_handler(uint64_t *regs)
     csr_write32(1 << swi, LA_CSR_ESTAT);
     irq = LA_LOC_IRQ_BASE + swi;
   } else {
+    up_set_interrupt_context(false);
+    percpu->cur_regs = 0;
     return regs;
   }
 
@@ -235,8 +298,7 @@ uint64_t *la64_vint_handler(uint64_t *regs)
 
   up_set_interrupt_context(false);
 
-  syslog(LOG_EMERG, "VINT END! crmd = 0x%x, ecfg = 0x\n",
-      csr_read32(LA_CSR_CRMD), csr_read32(LA_CSR_ECFG));
+  syslog(LOG_EMERG, "VINT END! crmd = 0x%x, ecfg = 0x\n", csr_read32(LA_CSR_CRMD), csr_read32(LA_CSR_ECFG));
 
   return regs;
 }

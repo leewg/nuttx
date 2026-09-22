@@ -88,6 +88,7 @@ void up_initial_state(struct tcb_s *tcb)
   }
 
   topstack = (uintptr_t)tcb->stack_base_ptr + tcb->adj_stack_size;
+  topstack &= ~0xfUL;
 
 #ifdef CONFIG_ARCH_KERNEL_STACK
   /* Use the process kernel stack to store context for user processes */
@@ -123,12 +124,17 @@ void up_initial_state(struct tcb_s *tcb)
   xcp->regs[REG_TP]      = (uintptr_t)tcb->stack_alloc_ptr +
                                      sizeof(struct tls_info_s);
 #endif
+
+#if 0
   xcp->regs[REG_ESTAT] = 0x0;
   xcp->regs[REG_CRMD] = DEFAULT_THREAD_CRMD;
   xcp->regs[REG_PRMD] = DEFAULT_THREAD_PRMD;
-  //xcp->regs[REG_CRMD] = csr_read32(LA_CSR_CRMD) | CSR_CRMD_IE;
-  //xcp->regs[REG_PRMD] = csr_read32(LA_CSR_PRMD) | CSR_PRMD_PIE | 0x00;
-  //xcp->regs[REG_ECFG] = csr_read32(LA_CSR_ECFG);
+#else
+  xcp->regs[REG_CRMD] = (__csrrd(LA_CSR_CRMD) &(~CSR_CRMD_DA)) & CSR_CRMD_PG | \
+                        1 << CSR_CRMD_DACF_SHIFT | 1 << CSR_CRMD_DACM_SHIFT;
+  xcp->regs[REG_PRMD] = __csrrd(LA_CSR_PRMD) | CSR_PRMD_PIE | 0x00;
+  xcp->regs[REG_ECFG] = __csrrd(LA_CSR_ECFG);
+#endif
 
 #ifndef CONFIG_BUILD_FLAT
   tcb->xcp.initregs = tcb->xcp.regs;

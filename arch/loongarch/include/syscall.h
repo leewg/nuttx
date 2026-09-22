@@ -59,6 +59,8 @@
 
 /* LoongArch64 system calls ******************************************************/
 
+#define SYS_save_context          (0)
+
 /* SYS call 1:
  *
  * void loongarch64_fullcontextrestore() noreturn_function;
@@ -127,20 +129,22 @@ extern "C"
  *   - $a0: syscall number
  *   - Return value in $a0
  ****************************************************************************/
+#define SYSCALL_CLOBBERLIST \
+  "$t0", "$t1", "$t2", "$t3", \
+  "$t4", "$t5", "$t6", "$t7", "$t8", "memory"
 
 static inline uintptr_t sys_call0(unsigned int nbr)
 {
-  register long sys_nr __asm__("a7") = nbr;
-  register long ret    __asm__("a0");
+  register long a7 __asm__("$a7") = nbr;
+  register long a0 __asm__("$a0");
 
   __asm__ __volatile__(
-      "syscall 0\n"
-      : "=r"(ret)
-      : "r"(sys_nr)
-      : "memory"
-    );
+      "syscall 0 \n"
+      : "=r"(a0)
+      : "r"(a7)
+      : SYSCALL_CLOBBERLIST);
 
-  return (uintptr_t)ret;
+  return (uintptr_t)a0;
 }
 
 /****************************************************************************

@@ -68,16 +68,16 @@ static void sig_trampoline(void) naked_function;
 static void sig_trampoline(void)
 {
   __asm__ __volatile__ (
-    "addi   $sp, $sp, -32\n"   /* Save ra on the stack */
-    "st.d   $ra, $sp, 24\n"
+    "addi $sp, $sp, -" STACK_FRAME_SIZE "\n"   /* Save ra on the stack */
+    "st.d $ra, $sp, 0\n"
     "move $t0, $a0\n"        /* t0=sighand */
     "move $a0, #a1\n"        /* a0=signo */
     "move $a1, $a2\n"        /* a1=info */
     "move $a2, $a3\n"        /* a2=ucontext */
-    "jalr t0\n"            /* Call the signal handler (modifies ra) */
-    "ld.d   $ra, $sp, 24\n"  /* Recover ra in sp */
-    "addi   $sp, $sp, 32\n"
-    "li     $a0, %0\n"  /* SYS_signal_handler_return */
+    "jilr $ra, $t0, 0\n"            /* Call the signal handler (modifies ra) */
+    "ld.d $ra, $sp, 0\n"  /* Recover ra in sp */
+    "addi $sp, $sp, " STACK_FRAME_SIZE "\n"
+    "li   $a0, %0\n"  /* SYS_signal_handler_return */
     "syscall 0\n"       /* Return from the SYSCALL */
     "nop\n"
     :

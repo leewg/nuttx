@@ -874,71 +874,111 @@
 #define EXCCODE_INT_NMI   77
 #define EXCCODE_INT_END   78
 
+#ifndef __ASSEMBLY__
 /****************************************************************************
  * CSR Read/Write Inline Macros
  ****************************************************************************/
+#define __csrrd(csr)        \
+  ({                        \
+   unsigned int __val;      \
+   __asm__ __volatile__(    \
+       "csrrd %0, %1 \n\t" \
+       : "=r" (__val)       \
+       : "i" (csr)          \
+       : "memory"           \
+       );                   \
+       __val;               \
+   })
 
-#ifndef __ASSEMBLY__
+#define __dcsrrd(csr)       \
+  ({                        \
+   unsigned long __val;     \
+   __asm__ __volatile__(    \
+       "csrrd %0, %1 \n\t" \
+       : "=r" (__val)       \
+       : "i" (csr)          \
+       : "memory"           \
+       );                   \
+       __val;               \
+   })
+
+#define __csrwr(val, csr)       \
+  ({                            \
+   unsigned int __old = (val);  \
+   __asm__ __volatile__(    \
+       "csrwr %0, %1 \n\t" \
+       : "+r" (__old)       \
+       : "i" (csr)          \
+       : "memory"           \
+       );                   \
+       __old;               \
+   })
+
+#define __dcsrwr(val, csr)      \
+  ({                            \
+   unsigned long __old = (val); \
+   __asm__ __volatile__(    \
+       "csrwr %0, %1 \n\t" \
+       : "+r" (__old)       \
+       : "i" (csr)          \
+       : "memory"           \
+       );                   \
+       __old;               \
+   })
+
+#define __csrxchg(val, mask, csr)   \
+  ({                                \
+   unsigned int __old = (val);      \
+   __asm__ __volatile__(            \
+       "csrxchg %0, %1, %2 \n\t"     \
+       : "+r" (__old)           \
+       : "r" (mask), "i" (csr)  \
+       : "memory"               \
+       );                       \
+       __old;                   \
+   })
+
+#define __dcsrxchg(val, mask, csr)  \
+  ({                                \
+   unsigned long __old = (val);     \
+   __asm__ __volatile__(            \
+       "csrxchg %0, %1, %2 \n\t"     \
+       : "+r" (__old)           \
+       : "r" (mask), "i" (csr)  \
+       : "memory"               \
+       );                       \
+       __old;                   \
+   })
 
 /* CSR */
-static inline u32 csr_read32(u32 reg)
+static inline uint32_t csr_read32(uint32_t csr)
 {
-	u32 val;
-	asm volatile (
-		"csrrd %[val], %[reg] \n\t"
-		: [val] "=r" (val)
-		: [reg] "i" (reg)
-		: "memory");
-	return val;
+  return __csrrd(csr);
 }
 
-static inline u64 csr_read64(u32 reg)
+static inline uint64_t csr_read64(uint64_t csr)
 {
-	u64 val;
-	asm volatile (
-		"csrrd %[val], %[reg] \n\t"
-		: [val] "=r" (val)
-		: [reg] "i" (reg)
-		: "memory");
-	return val;
+  return __dcsrrd(csr);
 }
 
-static inline void csr_write32(u32 val, u32 reg)
+static inline void csr_write32(uint32_t val, uint32_t csr)
 {
-	asm volatile (
-		"csrwr %[val], %[reg] \n\t"
-		: [val] "+r" (val)
-		: [reg] "i" (reg)
-		: "memory");
+  __csrwr(val, csr);
 }
 
-static inline void csr_write64(u64 val, u32 reg)
+static inline void csr_write64(uint64_t val, uint64_t csr)
 {
-	asm volatile (
-		"csrwr %[val], %[reg] \n\t"
-		: [val] "+r" (val)
-		: [reg] "i" (reg)
-		: "memory");
+  __dcsrwr(val, csr);
 }
 
-static inline u32 csr_xchg32(u32 val, u32 mask, u32 reg)
+static inline uint32_t csr_xchg32(uint32_t val, uint32_t mask, uint32_t csr)
 {
-	asm volatile (
-		"csrxchg %[val], %[mask], %[reg] \n\t"
-		: [val] "+r" (val)
-		: [mask] "r" (mask), [reg] "i" (reg)
-		: "memory");
-	return val;
+  return __csrxchg(val, mask, csr);
 }
 
-static inline u64 csr_xchg64(u64 val, u64 mask, u32 reg)
+static inline uint64_t csr_xchg64(uint64_t val, uint64_t mask, uint64_t csr)
 {
-	asm volatile (
-		"csrxchg %[val], %[mask], %[reg] \n\t"
-		: [val] "+r" (val)
-		: [mask] "r" (mask), [reg] "i" (reg)
-		: "memory");
-	return val;
+  return __dcsrxchg(val, mask, csr);
 }
 
 /* IOCSR */
@@ -1007,7 +1047,7 @@ static inline u64 drdtime(void)
 
 static inline unsigned int get_csr_cpuid(void)
 {
-	return csr_read32(LA_CSR_CPUID);
+	return __csrrd(LA_CSR_CPUID);
 }
 
 static inline void csr_any_send(unsigned int addr, unsigned int data,
@@ -1024,69 +1064,68 @@ static inline void csr_any_send(unsigned int addr, unsigned int data,
 
 static inline unsigned int read_csr_excode(void)
 {
-    return (csr_read32(LA_CSR_ESTAT) & CSR_ESTAT_EXC) >> CSR_ESTAT_EXC_SHIFT;
+  return (__csrrd(LA_CSR_ESTAT) & CSR_ESTAT_EXC) >> CSR_ESTAT_EXC_SHIFT;
 }
 
 static inline void write_csr_index(unsigned int idx)
 {
-    csr_xchg32(idx, CSR_TLBIDX_IDXM, LA_CSR_TLBIDX);
+  __csrxchg(idx, CSR_TLBIDX_IDXM, LA_CSR_TLBIDX);
 }
 
 static inline unsigned int read_csr_pagesize(void)
 {
-    return (csr_read32(LA_CSR_TLBIDX) & CSR_TLBIDX_SIZEM) >> CSR_TLBIDX_SIZE;
+  return (__csrrd(LA_CSR_TLBIDX) & CSR_TLBIDX_SIZEM) >> CSR_TLBIDX_SIZE;
 }
 
 static inline void write_csr_pagesize(unsigned int size)
 {
-    csr_xchg32(size << CSR_TLBIDX_SIZE, CSR_TLBIDX_SIZEM, LA_CSR_TLBIDX);
+  __csrxchg(size << CSR_TLBIDX_SIZE, CSR_TLBIDX_SIZEM, LA_CSR_TLBIDX);
 }
 
 static inline unsigned int read_csr_tlbrefill_pagesize(void)
 {
-    return (csr_read64(LA_CSR_TLBREHI) & CSR_TLBREHI_PS) >> CSR_TLBREHI_PS_SHIFT;
+  return (__dcsrrd(LA_CSR_TLBREHI) & CSR_TLBREHI_PS) >> CSR_TLBREHI_PS_SHIFT;
 }
 
 static inline void write_csr_tlbrefill_pagesize(unsigned int size)
 {
-    csr_xchg64(size << CSR_TLBREHI_PS_SHIFT, CSR_TLBREHI_PS, LA_CSR_TLBREHI);
+  __dcsrxchg(size << CSR_TLBREHI_PS_SHIFT, CSR_TLBREHI_PS, LA_CSR_TLBREHI);
 }
 
 /* Read-Only CSR macros for specific registers */
-#define read_csr_asid()			csr_read32(LA_CSR_ASID)
-#define write_csr_asid(val)		csr_write32(val, LA_CSR_ASID)
-#define read_csr_entryhi()		csr_read64(LA_CSR_TLBEHI)
-#define write_csr_entryhi(val)		csr_write64(val, LA_CSR_TLBEHI)
-#define read_csr_entrylo0()		csr_read64(LA_CSR_TLBELO0)
-#define write_csr_entrylo0(val)		csr_write64(val, LA_CSR_TLBELO0)
-#define read_csr_entrylo1()		csr_read64(LA_CSR_TLBELO1)
-#define write_csr_entrylo1(val)		csr_write64(val, LA_CSR_TLBELO1)
-#define read_csr_ecfg()			csr_read32(LA_CSR_ECFG)
-#define write_csr_ecfg(val)		csr_write32(val, LA_CSR_ECFG)
-#define read_csr_estat()		csr_read32(LA_CSR_ESTAT)
-#define write_csr_estat(val)		csr_write32(val, LA_CSR_ESTAT)
-#define read_csr_tlbidx()		csr_read32(LA_CSR_TLBIDX)
-#define write_csr_tlbidx(val)		csr_write32(val, LA_CSR_TLBIDX)
-#define read_csr_euen()			csr_read32(LA_CSR_EUEN)
-#define write_csr_euen(val)		csr_write32(val, LA_CSR_EUEN)
-#define read_csr_cpuid()		csr_read32(LA_CSR_CPUID)
-#define read_csr_prcfg1()		csr_read64(LA_CSR_PRCFG1)
-#define write_csr_prcfg1(val)		csr_write64(val, LA_CSR_PRCFG1)
-#define read_csr_prcfg2()		csr_read64(LA_CSR_PRCFG2)
-#define write_csr_prcfg2(val)		csr_write64(val, LA_CSR_PRCFG2)
-#define read_csr_prcfg3()		csr_read64(LA_CSR_PRCFG3)
-#define write_csr_prcfg3(val)		csr_write64(val, LA_CSR_PRCFG3)
-#define read_csr_stlbpgsize()		csr_read32(LA_CSR_STLBPGSIZE)
-#define write_csr_stlbpgsize(val)	csr_write32(val, LA_CSR_STLBPGSIZE)
-#define read_csr_rvacfg()		csr_read32(LA_CSR_RVACFG)
-#define write_csr_rvacfg(val)		csr_write32(val, LA_CSR_RVACFG)
-#define write_csr_tintclear(val)	csr_write32(val, LA_CSR_TINTCLR)
-#define read_csr_impctl1()		csr_read64(LA_CSR_IMPCTL1)
-#define write_csr_impctl1(val)		csr_write64(val, LA_CSR_IMPCTL1)
-#define write_csr_impctl2(val)		csr_write64(val, LA_CSR_IMPCTL2)
+#define read_csr_asid()           __csrrd(LA_CSR_ASID)
+#define write_csr_asid(val)       __csrwr(val, LA_CSR_ASID)
+#define read_csr_entryhi()        __dcsrrd(LA_CSR_TLBEHI)
+#define write_csr_entryhi(val)    __dcsrwr(val, LA_CSR_TLBEHI)
+#define read_csr_entrylo0()       __dcsrrd(LA_CSR_TLBELO0)
+#define write_csr_entrylo0(val)   __dcsrwr(val, LA_CSR_TLBELO0)
+#define read_csr_entrylo1()       __dcsrrd(LA_CSR_TLBELO1)
+#define write_csr_entrylo1(val)   __dcsrwr(val, LA_CSR_TLBELO1)
+#define read_csr_ecfg()           __csrrd(LA_CSR_ECFG)
+#define write_csr_ecfg(val)       __csrwr(val, LA_CSR_ECFG)
+#define read_csr_estat()          __csrrd(LA_CSR_ESTAT)
+#define write_csr_estat(val)      __csrwr(val, LA_CSR_ESTAT)
+#define read_csr_tlbidx()         __csrrd(LA_CSR_TLBIDX)
+#define write_csr_tlbidx(val)     __csrwr(val, LA_CSR_TLBIDX)
+#define read_csr_euen()           __csrrd(LA_CSR_EUEN)
+#define write_csr_euen(val)       __csrwr(val, LA_CSR_EUEN)
+#define read_csr_cpuid()          __csrrd(LA_CSR_CPUID)
+#define read_csr_prcfg1()         __dcsrrd(LA_CSR_PRCFG1)
+#define write_csr_prcfg1(val)     __dcsrwr(val, LA_CSR_PRCFG1)
+#define read_csr_prcfg2()         __dcsrrd(LA_CSR_PRCFG2)
+#define write_csr_prcfg2(val)     __dcsrwr(val, LA_CSR_PRCFG2)
+#define read_csr_prcfg3()	        __dcsrrd(LA_CSR_PRCFG3)
+#define write_csr_prcfg3(val)     __dcsrwr(val, LA_CSR_PRCFG3)
+#define read_csr_stlbpgsize()     __csrrd(LA_CSR_STLBPGSIZE)
+#define write_csr_stlbpgsize(val) __csrwr(val, LA_CSR_STLBPGSIZE)
+#define read_csr_rvacfg()         __csrrd(LA_CSR_RVACFG)
+#define write_csr_rvacfg(val)     __csrwr(val, LA_CSR_RVACFG)
+#define write_csr_tintclear(val)  __csrwr(val, LA_CSR_TINTCLR)
+#define read_csr_impctl1()        __dcsrrd(LA_CSR_IMPCTL1)
+#define write_csr_impctl1(val)    __dcsrwr(val, LA_CSR_IMPCTL1)
+#define write_csr_impctl2(val)    __dcsrwr(val, LA_CSR_IMPCTL2)
+#define set_csr_estat(val)        __csrxchg(val, val, LA_CSR_ESTAT)
+#define clear_csr_estat(val)      __csrxchg(~(val), val, LA_CSR_ESTAT)
+#endif
 
-#define set_csr_estat(val)      csr_xchg32(val, val, LA_CSR_ESTAT)
-#define clear_csr_estat(val)    csr_xchg32(~(val), val, LA_CSR_ESTAT)
-
-#endif /* !__ASSEMBLY__ */
 #endif /* __ARCH_LOONGARCH64_INCLUDE_CSR_H */

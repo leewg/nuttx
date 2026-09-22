@@ -158,8 +158,10 @@ __start:
 _start:
 
   /* Disable global interrupt */
-  li.d  t0, CSR_CRMD_IE
-  csrxchg zero, t0, LA_CSR_CRMD
+  //li.d  t0, CSR_CRMD_IE
+  //csrxchg zero, t0, LA_CSR_CRMD
+  li.w  t0, 0xb0    # DATM=0 1,, DATF=01, PG=1, DA=0, IE=0, PLV=00
+  csrwr t0, LA_CSR_CRMD
 
   /* set interrupt mask 0x1fff */
   csrrd   t0, LA_CSR_ECFG

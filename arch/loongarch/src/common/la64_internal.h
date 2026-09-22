@@ -268,6 +268,8 @@ void la64_color_intstack(void);
 #endif
 
 void la64_sigdeliver(void);
+int la64_swint(int irq, void *context, void *arg);
+
 
 /****************************************************************************
  * Name: la64_jump_to_user

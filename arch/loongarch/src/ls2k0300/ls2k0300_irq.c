@@ -45,11 +45,6 @@
  * Public Functions
  ****************************************************************************/
 
-void la64_exception_attach(void)
-{
-  ;
-}
-
 /****************************************************************************
  * Name: up_irqinitialize
  ****************************************************************************/
@@ -72,9 +67,6 @@ void up_irqinitialize(void)
   putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_IEN2);
   putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_IEN3);
 
-  /* all ext int map to INT2 */
-  putreg32(0x04040404, INTC_BASE + LS2K0300_EXTIOI_MAP);
-
   /* level trigger */
   putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_POL0);
   putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_POL1);
@@ -82,19 +74,22 @@ void up_irqinitialize(void)
   putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_POL3);
 
   /* clear all isr */
-  putreg32(0x1, INTC_BASE + LS2K0300_EXTIOI_ISR0);
-  putreg32(0x1, INTC_BASE + LS2K0300_EXTIOI_ISR1);
-  putreg32(0x1, INTC_BASE + LS2K0300_EXTIOI_ISR2);
-  putreg32(0x1, INTC_BASE + LS2K0300_EXTIOI_ISR3);
+  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_ICLR0);
+  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_ICLR1);
+  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_ICLR2);
+  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_ICLR3);
 
   /* clear all map to CORE isr */
-  putreg32(0x1, INTC_BASE + LS2K0300_EXTIOI_CORE_ISR0);
-  putreg32(0x1, INTC_BASE + LS2K0300_EXTIOI_CORE_ISR1);
-  putreg32(0x1, INTC_BASE + LS2K0300_EXTIOI_CORE_ISR2);
-  putreg32(0x1, INTC_BASE + LS2K0300_EXTIOI_CORE_ISR3);
+  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_CORE_ICLR0);
+  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_CORE_ICLR1);
+  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_CORE_ICLR2);
+  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_CORE_ICLR3);
 
   /* Attach the common interrupt handler */
   la64_exception_attach();
+
+  /* all ext int map to INT2 */
+  putreg32(0x04040404, INTC_BASE + LS2K0300_EXTIOI_MAP);
 
   /* enable all INT */
   val = read_csr_ecfg();
@@ -118,7 +113,6 @@ void up_irqinitialize(void)
   //la64_color_intstack();
   //up_irq_enable();
 #endif
-
 }
 
 /****************************************************************************

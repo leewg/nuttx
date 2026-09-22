@@ -109,7 +109,7 @@ void up_timer_initialize(void)
 {
   uint64_t tcfg;
 
-  irq_attach(LA_LOC_IRQ_BASE + INT_TI, la64_timer_interrupt, NULL);
+  irq_attach(LA_IRQ_TIMER, la64_timer_interrupt, NULL);
 
   csr_write64(0, LA_CSR_TVAL);
   csr_write64(0, LA_CSR_CNTC);
@@ -137,7 +137,7 @@ void up_timer_initialize(void)
   csr_write64(tcfg, LA_CSR_TCFG);
 
   /* Enable the allocated CPU interrupt. */
-  up_enable_irq(LA_LOC_IRQ_BASE + INT_TI);
+  up_enable_irq(LA_IRQ_TIMER);
 }
 
 /****************************************************************************
@@ -149,12 +149,13 @@ void up_timer_initialize(void)
 #ifdef CONFIG_CLOCK_TIMEKEEPING
 int up_timer_gettime(FAR struct timespec *tp)
 {
-  uint64_t count;
+  int rID = 0;
+  uint64_t count = 0;
   uint64_t nsec;
 
   __asm__ __volatile__(
-    "rdtime.d %0, $zero"
-    : "=r"(count)
+    "rdtime.d %0, %1"
+    : "=r"(count), "=r"(rID)
     :
     : "memory"
   );

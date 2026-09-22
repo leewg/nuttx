@@ -31,7 +31,7 @@ list(APPEND SRCS la64_exit.c)
 list(APPEND SRCS la64_getintstack.c la64_registerdump.c)
 list(APPEND SRCS la64_switchcontext.c la64_saveusercontext.S)
 
-list(APPEND SRCS la64_vectors.S la64_exception.c la64_doirq.c)
+list(APPEND SRCS la64_vectors.S la64_exception.c la64_doirq.c, la64_swint.c)
 list(APPEND SRCS la64_tlb_refill.S, la64_fatal.S)
 
 list(APPEND SRCS la64_percpu.c)
