@@ -49,51 +49,52 @@
 
 up_saveusercontext:
 
-  st.d    $r0,  $r4, REG_ZERO
-  st.d    $r1,  $r4, REG_RA     /* $ra */
-  st.d    $r2,  $r4, REG_TP     /* $tp */
-  st.d    $r3,  $r4, REG_SP     /* $sp */
+  st.d    $r0,  $r4, TP_ZERO
+  st.d    $r1,  $r4, TP_RA     /* $ra */
+  st.d    $r2,  $r4, TP_TP     /* $tp */
+  st.d    $r3,  $r4, TP_SP     /* $sp */
 
   addi.d  t0,  zero, 1
 
-  st.d    t0,   $r4, REG_A0    /* $a0 */
-  st.d    $r5,  $r4, REG_A1    /* $a1 */
-  st.d    $r6,  $r4, REG_A2    /* $a2 */
-  st.d    $r7,  $r4, REG_A3    /* $a3 */
-  st.d    $r8,  $r4, REG_A4    /* $a4 */
-  st.d    $r9,  $r4, REG_A5    /* $a5 */
-  st.d    $r10, $r4, REG_A6    /* $a6 */
-  st.d    $r11, $r4, REG_A7    /* $a7 */
+  st.d    t0,   $r4, TP_A0    /* $a0 */
+  st.d    $r5,  $r4, TP_A1    /* $a1 */
+  st.d    $r6,  $r4, TP_A2    /* $a2 */
+  st.d    $r7,  $r4, TP_A3    /* $a3 */
+  st.d    $r8,  $r4, TP_A4    /* $a4 */
+  st.d    $r9,  $r4, TP_A5    /* $a5 */
+  st.d    $r10, $r4, TP_A6    /* $a6 */
+  st.d    $r11, $r4, TP_A7    /* $a7 */
 
-  st.d    $r12, $r4, REG_T0    /* $t0 */
-  st.d    $r13, $r4, REG_T1    /* $t1 */
-  st.d    $r14, $r4, REG_T2    /* $t2 */
-  st.d    $r15, $r4, REG_T3    /* $t3 */
-  st.d    $r16, $r4, REG_T4    /* $t4 */
-  st.d    $r17, $r4, REG_T5    /* $t5 */
-  st.d    $r18, $r4, REG_T6    /* $t6 */
-  st.d    $r19, $r4, REG_T7    /* $t7 */
-  st.d    $r20, $r4, REG_T8    /* $t8 */
+  st.d    $r12, $r4, TP_T0    /* $t0 */
+  st.d    $r13, $r4, TP_T1    /* $t1 */
+  st.d    $r14, $r4, TP_T2    /* $t2 */
+  st.d    $r15, $r4, TP_T3    /* $t3 */
+  st.d    $r16, $r4, TP_T4    /* $t4 */
+  st.d    $r17, $r4, TP_T5    /* $t5 */
+  st.d    $r18, $r4, TP_T6    /* $t6 */
+  st.d    $r19, $r4, TP_T7    /* $t7 */
+  st.d    $r20, $r4, TP_T8    /* $t8 */
 
-  st.d    $r21, $r4, REG_U0
-  st.d    $r22, $r4, REG_FP    /* $fp / $s9 */
-  st.d    $r23, $r4, REG_S0    /* $s0 */
-  st.d    $r24, $r4, REG_S1    /* $s1 */
-  st.d    $r25, $r4, REG_S2    /* $s2 */
-  st.d    $r26, $r4, REG_S3    /* $s3 */
-  st.d    $r27, $r4, REG_S4    /* $s4 */
-  st.d    $r28, $r4, REG_S5    /* $s5 */
-  st.d    $r29, $r4, REG_S6    /* $s6 */
-  st.d    $r30, $r4, REG_S7    /* $s7 */
-  st.d    $r31, $r4, REG_S8    /* $s8 */
+  st.d    $r21, $r4, TP_U0
+  st.d    $r22, $r4, TP_FP    /* $fp / $s9 */
+  st.d    $r23, $r4, TP_S0    /* $s0 */
+  st.d    $r24, $r4, TP_S1    /* $s1 */
+  st.d    $r25, $r4, TP_S2    /* $s2 */
+  st.d    $r26, $r4, TP_S3    /* $s3 */
+  st.d    $r27, $r4, TP_S4    /* $s4 */
+  st.d    $r28, $r4, TP_S5    /* $s5 */
+  st.d    $r29, $r4, TP_S6    /* $s6 */
+  st.d    $r30, $r4, TP_S7    /* $s7 */
+  st.d    $r31, $r4, TP_S8    /* $s8 */
 
-  st.d    $r1,  $r4, REG_ERA
+  csrrd   t0, LA_CSR_ERA
+  st.d    t0,  $r4, TP_ERA
 
   csrrd   t0, LA_CSR_BADV
-  st.d    t0, $r4, REG_BADV          /* BADV */
+  st.d    t0, $r4, TP_BADV          /* BADV */
 
   csrrd   t0, LA_CSR_PRMD
-  st.d    t0, $r4, REG_PRMD    /* PRMD */
+  st.d    t0, $r4, TP_PRMD    /* PRMD */
 
   move    $r4,  zero
   jirl    $r0, $r1, 0

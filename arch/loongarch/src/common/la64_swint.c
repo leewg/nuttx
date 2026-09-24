@@ -76,6 +76,7 @@ int la64_swint(int irq, void *context, void *arg)
    * command and REG_A1-6 = variable number of
    * arguments depending on the system call.
    */
+  syslog(LOG_EMERG, "la64_swint\n");
 
 #ifdef CONFIG_DEBUG_SYSCALL_INFO
   svcinfo("Entry: regs: %p cmd: %d\n", regs, regs[REG_A0]);

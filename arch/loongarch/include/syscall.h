@@ -126,7 +126,7 @@ extern "C"
  *   System call SYS_ argument and no additional parameters.
  *
  *   LoongArch64 Calling Convention:
- *   - $a0: syscall number
+ *   - $a7: syscall number
  *   - Return value in $a0
  ****************************************************************************/
 #define SYSCALL_CLOBBERLIST \
@@ -154,16 +154,16 @@ static inline uintptr_t sys_call0(unsigned int nbr)
  *   System call SYS_ argument and one additional parameter.
  *
  *   LoongArch64 Calling Convention:
- *   - $a0: syscall number
- *   - $a1: parameter 1
+ *   - $a7: syscall number
+ *   - $a0: parameter 1
  *   - Return value in $a0
  ****************************************************************************/
 
 static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
 {
-  register long sys_nr __asm__("a0") = nbr;
-  register long arg1   __asm__("a1")  = (long)parm1;
-  register long ret    __asm__("a7");
+  register long sys_nr __asm__("a7") = nbr;
+  register long arg1   __asm__("a0")  = (long)parm1;
+  register long ret    __asm__("a0");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -182,18 +182,18 @@ static inline uintptr_t sys_call1(unsigned int nbr, uintptr_t parm1)
  *   System call SYS_ argument and two additional parameters.
  *
  *   LoongArch64 Calling Convention:
- *   - $a0: syscall number
- *   - $a1,a2: parameter 1,2
+ *   - $a7: syscall number
+ *   - $a0,a1: parameter 1,2
  *   - Return value in $a0
  ****************************************************************************/
 
 static inline uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2)
 {
-  register long sys_nr __asm__("a0") = nbr;
-  register long arg1   __asm__("a1")  = (long)parm1;
-  register long arg2   __asm__("a2")  = (long)parm2;
-  register long ret    __asm__("a7");
+  register long sys_nr __asm__("a7") = nbr;
+  register long arg1   __asm__("a0")  = (long)parm1;
+  register long arg2   __asm__("a1")  = (long)parm2;
+  register long ret    __asm__("a0");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -212,19 +212,19 @@ static inline uintptr_t sys_call2(unsigned int nbr, uintptr_t parm1,
  *   System call SYS_ argument and three additional parameters.
  *
  *   LoongArch64 Calling Convention:
- *   - $a0: syscall number
- *   - $a1,a2,a3: parameter 1,2,3
+ *   - $a7: syscall number
+ *   - $a0,a1,a2: parameter 1,2,3
  *   - Return value in $a0
  ****************************************************************************/
 
 static inline uintptr_t sys_call3(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3)
 {
-  register long sys_nr __asm__("a0") = nbr;
-  register long arg1   __asm__("a1")  = (long)parm1;
-  register long arg2   __asm__("a2")  = (long)parm2;
-  register long arg3   __asm__("a3")  = (long)parm3;
-  register long ret    __asm__("a7");
+  register long sys_nr __asm__("a7") = nbr;
+  register long arg1   __asm__("a0")  = (long)parm1;
+  register long arg2   __asm__("a1")  = (long)parm2;
+  register long arg3   __asm__("a2")  = (long)parm3;
+  register long ret    __asm__("a0");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -243,8 +243,8 @@ static inline uintptr_t sys_call3(unsigned int nbr, uintptr_t parm1,
  *   System call SYS_ argument and four additional parameters.
  *
  *   LoongArch64 Calling Convention:
- *   - $a0: syscall number
- *   - $a1,a2,a3,a4: parameter 1,2,3,4
+ *   - $a7: syscall number
+ *   - $a0,a1,a2,a3: parameter 1,2,3,4
  *   - Return value in $a0
  ****************************************************************************/
 
@@ -252,12 +252,12 @@ static inline uintptr_t sys_call4(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3,
                                   uintptr_t parm4)
 {
-  register long sys_nr __asm__("a0") = nbr;
-  register long arg1   __asm__("a1")  = (long)parm1;
-  register long arg2   __asm__("a2")  = (long)parm2;
-  register long arg3   __asm__("a3")  = (long)parm3;
-  register long arg4   __asm__("a4")  = (long)parm4;
-  register long ret    __asm__("a7");
+  register long sys_nr __asm__("a7") = nbr;
+  register long arg1   __asm__("a0")  = (long)parm1;
+  register long arg2   __asm__("a1")  = (long)parm2;
+  register long arg3   __asm__("a2")  = (long)parm3;
+  register long arg4   __asm__("a3")  = (long)parm4;
+  register long ret    __asm__("a0");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -276,8 +276,8 @@ static inline uintptr_t sys_call4(unsigned int nbr, uintptr_t parm1,
  *   System call SYS_ argument and five additional parameters.
  *
  *   LoongArch64 Calling Convention:
- *   - $a0: syscall number
- *   - $a1,a2,a3,a4,a5: parameter 1,2,3,4,5
+ *   - $a7: syscall number
+ *   - $a0,a1,a2,a3,a4: parameter 1,2,3,4,5
  *   - Return value in $a0
  ****************************************************************************/
 
@@ -285,13 +285,13 @@ static inline uintptr_t sys_call5(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm2, uintptr_t parm3,
                                   uintptr_t parm4, uintptr_t parm5)
 {
-  register long sys_nr __asm__("a0") = nbr;
-  register long arg1   __asm__("a1")  = (long)parm1;
-  register long arg2   __asm__("a2")  = (long)parm2;
-  register long arg3   __asm__("a3")  = (long)parm3;
-  register long arg4   __asm__("a4")  = (long)parm4;
-  register long arg5   __asm__("a5")  = (long)parm5;
-  register long ret    __asm__("a7");
+  register long sys_nr __asm__("a7") = nbr;
+  register long arg1   __asm__("a0")  = (long)parm1;
+  register long arg2   __asm__("a1")  = (long)parm2;
+  register long arg3   __asm__("a2")  = (long)parm3;
+  register long arg4   __asm__("a3")  = (long)parm4;
+  register long arg5   __asm__("a4")  = (long)parm5;
+  register long ret    __asm__("a0");
 
   __asm__ __volatile__(
       "syscall 0\n"
@@ -310,8 +310,8 @@ static inline uintptr_t sys_call5(unsigned int nbr, uintptr_t parm1,
  *   System call SYS_ argument and six additional parameters.
  *
  *   LoongArch64 Calling Convention:
- *   - $a0: syscall number
- *   - $a1,a2,a3,a4,a5,a6: parameter 1,2,3,4,5,6
+ *   - $a7: syscall number
+ *   - $a0,a1,a2,a3,a4,a5: parameter 1,2,3,4,5,6
  *   - Return value in $a0
  ****************************************************************************/
 
@@ -320,14 +320,14 @@ static inline uintptr_t sys_call6(unsigned int nbr, uintptr_t parm1,
                                   uintptr_t parm4, uintptr_t parm5,
                                   uintptr_t parm6)
 {
-  register long sys_nr __asm__("a0") = nbr;
-  register long arg1   __asm__("a1")  = (long)parm1;
-  register long arg2   __asm__("a2")  = (long)parm2;
-  register long arg3   __asm__("a3")  = (long)parm3;
-  register long arg4   __asm__("a4")  = (long)parm4;
-  register long arg5   __asm__("a5")  = (long)parm5;
-  register long arg6   __asm__("a6")  = (long)parm6;
-  register long ret    __asm__("a7");
+  register long sys_nr __asm__("a7") = nbr;
+  register long arg1   __asm__("a0")  = (long)parm1;
+  register long arg2   __asm__("a1")  = (long)parm2;
+  register long arg3   __asm__("a2")  = (long)parm3;
+  register long arg4   __asm__("a3")  = (long)parm4;
+  register long arg5   __asm__("a4")  = (long)parm5;
+  register long arg6   __asm__("a5")  = (long)parm6;
+  register long ret    __asm__("a0");
 
   __asm__ __volatile__ (
       "syscall 0\n"

@@ -73,7 +73,7 @@
 #define INT_AVEC    14
 
 /* Interrupts */
-#define LA_LOC_IRQ_BASE (64)
+#define LA_LOC_IRQ_BASE (32)
 #define LA_IRQ_SWI0     (LA_LOC_IRQ_BASE + INT_SWI0)
 #define LA_IRQ_SWI1     (LA_LOC_IRQ_BASE + INT_SWI1)
 #define LA_IRQ_HWI0     (LA_LOC_IRQ_BASE + INT_HWI0)
@@ -90,7 +90,7 @@
 #define LA_IRQ_NMI      (LA_LOC_IRQ_BASE + INT_NMI)
 #define LA_IRQ_AVEC     (LA_LOC_IRQ_BASE + INT_AVEC)
 
-#define LA_EXT_IRQ_BASE   128
+#define LA_EXT_IRQ_BASE   64
 
 /* Register definitions (indices into exception context regs array) */
 #ifdef CONFIG_ARCH_LA64
@@ -146,36 +146,36 @@
 
 #define TP_ZERO  (REG_R0  * INT_REG_WIDTH)     /* $0  - Always zero */
 #define TP_RA    (REG_R1  * INT_REG_WIDTH)     /* $1  - Return address */
-#define TP_TP    (REG_R2  * INT_REG_WIDTH)     /* $2  - Stack pointer */
-#define TP_SP    (REG_R3  * INT_REG_WIDTH)     /* $3  - Global pointer */
-#define TP_A0    (REG_R4  * INT_REG_WIDTH)     /* $4  - Thread pointer */
-#define TP_A1    (REG_R5  * INT_REG_WIDTH)     /* $5  - Argument/Return 0 */
-#define TP_A2    (REG_R6  * INT_REG_WIDTH)     /* $6  - Argument/Return 1 */
-#define TP_A3    (REG_R7  * INT_REG_WIDTH)     /* $7  - Argument 2 */
-#define TP_A4    (REG_R8  * INT_REG_WIDTH)     /* $8  - Argument 3 */
-#define TP_A5    (REG_R9  * INT_REG_WIDTH)     /* $9  - Argument 4 */
-#define TP_A6    (REG_R10 * INT_REG_WIDTH)    /* $10 - Argument 5 */
-#define TP_A7    (REG_R11 * INT_REG_WIDTH)    /* $11 - Argument 6 */
-#define TP_T0    (REG_R12 * INT_REG_WIDTH)    /* $12 - Argument 7 */
-#define TP_T1    (REG_R13 * INT_REG_WIDTH)    /* $13 - Temporary 0 */
-#define TP_T2    (REG_R14 * INT_REG_WIDTH)    /* $14 - Temporary 1 */
-#define TP_T3    (REG_R15 * INT_REG_WIDTH)    /* $15 - Temporary 2 */
-#define TP_T4    (REG_R16 * INT_REG_WIDTH)    /* $16 - Temporary 3 */
-#define TP_T5    (REG_R17 * INT_REG_WIDTH)    /* $17 - Temporary 4 */
+#define TP_TP    (REG_R2  * INT_REG_WIDTH)     /* $2  - Thread pointer */
+#define TP_SP    (REG_R3  * INT_REG_WIDTH)     /* $3  - Stack pointer */
+#define TP_A0    (REG_R4  * INT_REG_WIDTH)     /* $4  - Argument/Return 0 */
+#define TP_A1    (REG_R5  * INT_REG_WIDTH)     /* $5  - Argument/Return 1 */
+#define TP_A2    (REG_R6  * INT_REG_WIDTH)     /* $6  - Argument 2 */
+#define TP_A3    (REG_R7  * INT_REG_WIDTH)     /* $7  - Argument 3 */
+#define TP_A4    (REG_R8  * INT_REG_WIDTH)     /* $8  - Argument 4 */
+#define TP_A5    (REG_R9  * INT_REG_WIDTH)     /* $9  - Argument 5 */
+#define TP_A6    (REG_R10 * INT_REG_WIDTH)    /* $10 - Argument 6 */
+#define TP_A7    (REG_R11 * INT_REG_WIDTH)    /* $11 - Argument 7 */
+#define TP_T0    (REG_R12 * INT_REG_WIDTH)    /* $12 - Temporary 0 */
+#define TP_T1    (REG_R13 * INT_REG_WIDTH)    /* $13 - Temporary 1 */
+#define TP_T2    (REG_R14 * INT_REG_WIDTH)    /* $14 - Temporary 2 */
+#define TP_T3    (REG_R15 * INT_REG_WIDTH)    /* $15 - Temporary 3 */
+#define TP_T4    (REG_R16 * INT_REG_WIDTH)    /* $16 - Temporary 4 */
+#define TP_T5    (REG_R17 * INT_REG_WIDTH)    /* $17 - Temporary 5 */
 #define TP_T6    (REG_R18 * INT_REG_WIDTH)    /* $18 - Temporary 5 */
 #define TP_T7    (REG_R19 * INT_REG_WIDTH)    /* $19 - Temporary 6 */
-#define TP_T8    (REG_R20 * INT_REG_WIDTH)    /* $20 - Temporary 7 */
-#define TP_U0    (REG_R21 * INT_REG_WIDTH)    /* $21 - Temporary 8 */
-#define TP_FP    (REG_R22 * INT_REG_WIDTH)    /* $22 - Reserved (nomips16) */
-#define TP_S0    (REG_R23 * INT_REG_WIDTH)    /* $23 - Frame pointer */
-#define TP_S1    (REG_R24 * INT_REG_WIDTH)    /* $24 - Saved 0 */
-#define TP_S2    (REG_R25 * INT_REG_WIDTH)    /* $25 - Saved 1 */
-#define TP_S3    (REG_R26 * INT_REG_WIDTH)    /* $26 - Saved 2 */
-#define TP_S4    (REG_R27 * INT_REG_WIDTH)    /* $27 - Saved 3 */
-#define TP_S5    (REG_R28 * INT_REG_WIDTH)    /* $28 - Saved 4 */
-#define TP_S6    (REG_R29 * INT_REG_WIDTH)    /* $29 - Saved 5 */
-#define TP_S7    (REG_R30 * INT_REG_WIDTH)    /* $30 - Saved 6 */
-#define TP_S8    (REG_R31 * INT_REG_WIDTH)    /* $31 - Saved 7 */
+#define TP_T8    (REG_R20 * INT_REG_WIDTH)    /* $20 - Temporary 8 */
+#define TP_U0    (REG_R21 * INT_REG_WIDTH)    /* $21 - Reserved */
+#define TP_FP    (REG_R22 * INT_REG_WIDTH)    /* $22 - Frame pointer */
+#define TP_S0    (REG_R23 * INT_REG_WIDTH)    /* $23 - Saved 0 */
+#define TP_S1    (REG_R24 * INT_REG_WIDTH)    /* $24 - Saved 1 */
+#define TP_S2    (REG_R25 * INT_REG_WIDTH)    /* $25 - Saved 2 */
+#define TP_S3    (REG_R26 * INT_REG_WIDTH)    /* $26 - Saved 3 */
+#define TP_S4    (REG_R27 * INT_REG_WIDTH)    /* $27 - Saved 4 */
+#define TP_S5    (REG_R28 * INT_REG_WIDTH)    /* $28 - Saved 5 */
+#define TP_S6    (REG_R29 * INT_REG_WIDTH)    /* $29 - Saved 6 */
+#define TP_S7    (REG_R30 * INT_REG_WIDTH)    /* $30 - Saved 7 */
+#define TP_S8    (REG_R31 * INT_REG_WIDTH)    /* $31 - Saved 8 */
 
 #define TP_CRMD    (CSR_CRMD  * INT_REG_WIDTH) /* Thread switch */
 #define TP_PRMD    (CSR_PRMD  * INT_REG_WIDTH) /* save these */
@@ -463,14 +463,16 @@ extern "C"
  *
  ****************************************************************************/
 
-#ifdef CONFIG_ARCH_HAVE_MULTICPU
 static inline_function int up_cpu_index(void)
 {
-  uint32_t cpuid = __csrrd(LA_CSR_CPUID);
+#ifdef CONFIG_ARCH_HAVE_MULTICPU
+  uint32_t cpuid = csr_read32(LA_CSR_CPUID);
 
-  return (int)(cpuid & 0xff);
-}
+  return (int)(cpuid & 0x1ff);
+#else
+  return 0;
 #endif /* CONFIG_ARCH_HAVE_MULTICPU */
+}
 
 /****************************************************************************
  * Name: up_irq_save

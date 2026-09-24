@@ -40,6 +40,7 @@
 
   .file "la64_vectors.S"
 
+#if 0
   .global machine_error_entry
   .global exception_common_entry
   .global tlbrefill_error_entry
@@ -150,6 +151,100 @@ SYM_FUNC_START(real_tlbrefill_error_entry)
   move  sp, a0
   RESTORE_ALL_AND_RET
 SYM_FUNC_END(real_tlbrefill_error_entry)
+#endif
+
+  .extern do_vint
+  .extern do_bp
+  .extern do_fpe
+  .extern do_fpu
+  .extern do_lsx
+  .extern do_lasx
+  .extern do_lbt
+  .extern do_ri
+  .extern do_watch
+
+  .balign 512
+SYM_FUNC_START(handle_vint)
+  BACKUP_T0T1
+  SAVE_ALL
+  move a1, sp
+  la.abs t0, do_vint
+  jirl  ra, t0, 0
+  /* a0/v0 返回可能发生任务切换后的新上下文指针 */
+  move sp, a0
+  RESTORE_ALL_AND_RET
+SYM_FUNC_END(handle_vint)
+
+SYM_FUNC_START(except_vec_cex)
+  b cache_parity_error
+SYM_FUNC_END(except_vec_cex)
+
+  .macro build_prep_badv
+  csrrd t0, LA_CSR_BADV
+  st.d  t0, sp, TP_BADV
+  .endm
+
+  .macro build_prep_fcsr
+  movfcsr2gr  a1, $fcsr0
+  .endm
+
+  .macro build_prep_none
+  .endm
+
+  .macro BUILD_HANDLER exception handler prep
+  .balign 512
+  SYM_FUNC_START(handle_\exception)
+  BACKUP_T0T1
+  SAVE_ALL
+  build_prep_\prep
+  move a0, sp
+  la.abs  t0, do_\handler
+  jirl  ra, t0, 0
+  move sp, a0
+  RESTORE_ALL_AND_RET
+  SYM_FUNC_END(handle_\exception)
+  .endm
+
+  BUILD_HANDLER ade ade badv
+  BUILD_HANDLER ale ale badv
+  BUILD_HANDLER bp bp none
+  BUILD_HANDLER fpe fpe fcsr
+  BUILD_HANDLER fpu fpu none
+  BUILD_HANDLER lsx lsx none
+  BUILD_HANDLER lasx lasx none
+  BUILD_HANDLER lbt lbt none
+  BUILD_HANDLER ri ri none
+  BUILD_HANDLER watch watch none
+  BUILD_HANDLER reserved reserved none
+
+SYM_FUNC_START(handle_sys)
+  la.abs  t0, handle_syscall
+  jirl  zero, t0, 0
+SYM_FUNC_END(handle_sys)
+
+SYM_FUNC_START(handle_syscall)
+  BACKUP_T0T1
+  SAVE_ALL
+
+  move  a0, sp    /* a0 = regs */
+  bl    do_syscall
+  move  sp, a0
+  RESTORE_ALL_AND_RET
+SYM_FUNC_END(handle_syscall)
+
+SYM_FUNC_START(handle_tlb_refill)
+  csrwr t0, LA_CSR_TLBRSAVE
+  csrrd t0, LA_CSR_PGD
+  lddir t0, t0, 3
+//#if CONFIG_PGTABLE_LEVELS > 2
+ // lddir t0, t0, 1
+//#endif
+  ldpte t0, 0
+  ldpte t0, 1
+  tlbfill
+  csrrd t0, LA_CSR_TLBRSAVE
+  ertn
+SYM_FUNC_END(handle_tlb_refill)
 
 /****************************************************************************
  * Data Section (Interrupt Stack Space)

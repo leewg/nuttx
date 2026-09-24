@@ -64,9 +64,7 @@ void up_switch_context(struct tcb_s *tcb, struct tcb_s *rtcb)
 
     if (!up_interrupt_context())
     {
-      syslog(LOG_EMERG, "switch start...\n");
       la64_switchcontext(); \
-      syslog(LOG_EMERG, "switch done...\n");
     }
     UNUSED(rtcb);
 }

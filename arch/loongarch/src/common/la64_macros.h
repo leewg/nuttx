@@ -187,13 +187,7 @@
 .endm
 
 .macro	SAVE_SOME
-  csrrd	t1, LA_CSR_PRMD
-  andi	t1, t1, 0x3	/* extract pplv bit */
   move	t0, sp
-  beqz	t1, 8f
-  /* Called from user mode, new stack. */
-  csrrd sp, LA_CSR_KS2
-8:
   addi.d  sp, sp, -XCPTCONTEXT_SIZE
   st.d    t0, sp, TP_SP
   st.d    zero, sp, TP_ZERO
@@ -219,8 +213,8 @@
   st.d  a6, sp, TP_A6
   st.d  a7, sp, TP_A7
 
-  csrrd ra, LA_CSR_ERA
-  st.d  ra, sp, TP_ERA
+  csrrd t0, LA_CSR_ERA
+  st.d  t0, sp, TP_ERA
 
   st.d  tp, sp, TP_TP
   st.d  fp, sp, TP_FP
@@ -266,11 +260,6 @@
 .endm
 
 .macro RESTORE_SOME
-  ld.d  a0, sp, TP_PRMD
-  andi  a0, a0, 0x3	/* extract pplv bit */
-  beqz  a0, 8f
-  ld.d  u0, sp, TP_U0
-8:
   ld.d  a0, sp, TP_ERA
   csrwr a0, LA_CSR_ERA
   ld.d  a0, sp, TP_PRMD
