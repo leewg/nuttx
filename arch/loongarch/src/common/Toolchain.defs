@@ -99,8 +99,8 @@ ifeq ($(CONFIG_ARCH_INSTRUMENT_ALL),y)
   ARCHOPTIMIZATION += -finstrument-functions
 endif
 
-ARCHCFLAGS += -fno-common
-ARCHCXXFLAGS += -fno-common
+ARCHCFLAGS += -fno-common -fno-builtin-memset -fno-builtin-memcpy
+ARCHCXXFLAGS += -fno-common -fno-builtin-memset -fno-builtin-memcpy
 
 ARCHCFLAGS += -Wall -Wstrict-prototypes -Wshadow -Wundef -Wno-attributes -Wno-unknown-pragmas
 ARCHCXXFLAGS += -Wall -Wshadow -Wundef -Wno-attributes -Wno-unknown-pragmas

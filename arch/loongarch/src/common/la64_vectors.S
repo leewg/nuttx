@@ -167,7 +167,7 @@ SYM_FUNC_END(real_tlbrefill_error_entry)
 SYM_FUNC_START(handle_vint)
   BACKUP_T0T1
   SAVE_ALL
-  move a1, sp
+  move a0, sp
   la.abs t0, do_vint
   jirl  ra, t0, 0
   /* a0/v0 返回可能发生任务切换后的新上下文指针 */
@@ -227,8 +227,10 @@ SYM_FUNC_START(handle_syscall)
   SAVE_ALL
 
   move  a0, sp    /* a0 = regs */
-  bl    do_syscall
+  bl    la64_syscall
+  //bl    do_syscall
   move  sp, a0
+
   RESTORE_ALL_AND_RET
 SYM_FUNC_END(handle_syscall)
 

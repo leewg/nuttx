@@ -704,12 +704,7 @@ void up_putc(int ch)
       la64_lowputc(ch);
     spin_unlock_irqrestore(&priv->lock, flags);
   }
-  /*
-  la64_disable_uartint(priv, &imr);
-  la64_lowputc(ch);
-  la64_restore_uartint(priv, imr);
-  */
-#endif
+#endif  /* HAVE_SERIAL_CONSOLE */
 }
 
 #endif /* HAVE_UART_DEVICE */

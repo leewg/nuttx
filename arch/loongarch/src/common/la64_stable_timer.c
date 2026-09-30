@@ -79,9 +79,12 @@ static unsigned int hda_1us_cnt = 30;
 static int la64_timer_interrupt(int irq, void *context, void *arg)
 {
   /* Process timer interrupt */
-  up_putc('+');
 
   nxsched_process_timer();
+
+  __dcsrwr(1, LA_CSR_TINTCLR);
+
+  UP_DSB();
 
   return OK;
 }
@@ -108,12 +111,14 @@ static int la64_timer_interrupt(int irq, void *context, void *arg)
 void up_timer_initialize(void)
 {
   uint64_t tcfg;
+  uint64_t cnt_freq, ticks;
 
   irq_attach(LA_IRQ_TIMER, la64_timer_interrupt, NULL);
 
   csr_write64(0, LA_CSR_TVAL);
   csr_write64(0, LA_CSR_CNTC);
 
+#if 0
   {
     unsigned long mcsr2;
     unsigned int mul, div;
@@ -133,6 +138,11 @@ void up_timer_initialize(void)
   tcfg = hda_freq / TICKS_PER_SECOND;
   tcfg <<= CSR_TCFG_VAL_SHIFT;
   tcfg |= CSR_TCFG_EN | CSR_TCFG_PERIOD;
+#else
+  cnt_freq = 800000000;
+  ticks = cnt_freq / TICKS_PER_SECOND;
+  tcfg = ((uint64_t)ticks <<2) | CSR_TCFG_EN |CSR_TCFG_PERIOD;
+#endif
 
   csr_write64(tcfg, LA_CSR_TCFG);
 

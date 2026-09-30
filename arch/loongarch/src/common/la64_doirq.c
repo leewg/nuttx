@@ -28,6 +28,7 @@
 
 #include <stdint.h>
 #include <assert.h>
+#include <nuttx/debug.h>
 
 #include <nuttx/irq.h>
 #include <nuttx/addrenv.h>
@@ -58,7 +59,7 @@
  * Public Functions
  ****************************************************************************/
 
-uintreg_t *la64_doirq(int irq, uintreg_t *regs)
+uint64_t *la64_doirq(int irq, uintreg_t *regs)
 {
   struct tcb_s *tcb = this_task();
 
@@ -71,7 +72,11 @@ uintreg_t *la64_doirq(int irq, uintreg_t *regs)
 
   DEBUGASSERT(!up_interrupt_context());
 
+  up_set_interrupt_context(true);
+
   tcb->xcp.regs = regs;
+
+  syslog(LOG_EMERG, "la64_doirq: regs = 0x%x\n", regs);
 
   /* Deliver the IRQ */
 
@@ -105,12 +110,12 @@ uintreg_t *la64_doirq(int irq, uintreg_t *regs)
        */
 
       *running_task = tcb;
-      regs = tcb->xcp.regs;
   }
 
   /* Set irq flag */
 
   up_set_interrupt_context(false);
+  regs = tcb->xcp.regs;
 
   /* (*running_task)->xcp.regs is about to become invalid
    * and will be marked as NULL to avoid misusage.

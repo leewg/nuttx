@@ -576,7 +576,7 @@ noinstrument_function static inline_function bool up_interrupt_context(void)
 {
   uint64_t ctx =  __dcsrrd(LA_CSR_KS4);
 
-  return ctx > 0;
+  return (bool)ctx;
 }
 
 /****************************************************************************

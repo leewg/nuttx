@@ -510,6 +510,7 @@ void nx_start(void)
   g_nx_initstate = OSINIT_BOOT;
   sched_trace_mark("BOOT");
 
+  sinfo("BOOT\n");
   /* Initialize task list table *********************************************/
 
   tasklist_initialize();
@@ -523,6 +524,7 @@ void nx_start(void)
   g_nx_initstate = OSINIT_TASKLISTS;
   sched_trace_mark("TASKLISTS");
 
+  sinfo("TASKLISTS\n");
   /* Initialize RTOS Data ***************************************************/
 
   drivers_early_initialize();
@@ -617,6 +619,7 @@ void nx_start(void)
   g_nx_initstate = OSINIT_MEMORY;
   sched_trace_mark("MEMORY");
 
+  sinfo("MEMORY\n");
   /* Initialize tasking data structures */
 
   task_initialize();
@@ -631,18 +634,22 @@ void nx_start(void)
 
   /* Initialize the interrupt handling subsystem (if included) */
 
+  sinfo("IRQ\n");
   irq_initialize();
 
   /* Initialize the POSIX timer facility (if included in the link) */
 
+  sinfo("CLOCK\n");
   clock_initialize();
 
+  sinfo("TIMER\n");
 #ifndef CONFIG_DISABLE_POSIX_TIMERS
   timer_initialize();
 #endif
 
   /* Initialize the signal facility (if in link) */
 
+  sinfo("NXSIG\n");
 #ifndef CONFIG_DISABLE_ALL_SIGNALS
   nxsig_initialize();
 #endif
@@ -673,6 +680,7 @@ void nx_start(void)
    * that are different for each  processor and hardware platform.
    */
 
+  sinfo("UP_INITIALIZE\n");
   up_initialize();
 
   /* Initialize common drivers */
@@ -694,6 +702,7 @@ void nx_start(void)
 
   g_nx_initstate = OSINIT_HARDWARE;
   sched_trace_mark("HARDWARE");
+  sinfo("HARDWARE\n");
 
   /* Setup for Multi-Tasking ************************************************/
 
@@ -741,6 +750,7 @@ void nx_start(void)
 
   g_nx_initstate = OSINIT_OSREADY;
   sched_trace_mark("OSREADY");
+  sinfo("OSREADY\n");
 
   /* Create initial tasks and bring-up the system */
 
@@ -750,6 +760,7 @@ void nx_start(void)
 
   g_nx_initstate = OSINIT_IDLELOOP;
   sched_trace_mark("IDLELOOP");
+  sinfo("IDLELOOP\n");
 
   /* Let other threads have access to the memory manager */
 

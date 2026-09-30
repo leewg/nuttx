@@ -125,16 +125,8 @@ void up_initial_state(struct tcb_s *tcb)
                                      sizeof(struct tls_info_s);
 #endif
 
-#if 0
-  xcp->regs[REG_ESTAT] = 0x0;
-  xcp->regs[REG_CRMD] = DEFAULT_THREAD_CRMD;
-  xcp->regs[REG_PRMD] = DEFAULT_THREAD_PRMD;
-#else
-  xcp->regs[REG_CRMD] = (__csrrd(LA_CSR_CRMD) &(~CSR_CRMD_DA)) & CSR_CRMD_PG | \
-                        1 << CSR_CRMD_DACF_SHIFT | 1 << CSR_CRMD_DACM_SHIFT;
-  xcp->regs[REG_PRMD] = __csrrd(LA_CSR_PRMD) | CSR_PRMD_PIE | 0x00;
-  xcp->regs[REG_ECFG] = __csrrd(LA_CSR_ECFG);
-#endif
+  xcp->regs[REG_CRMD] = __csrrd(LA_CSR_CRMD);
+  xcp->regs[REG_PRMD] = CSR_PRMD_PIE;
 
 #ifndef CONFIG_BUILD_FLAT
   tcb->xcp.initregs = tcb->xcp.regs;

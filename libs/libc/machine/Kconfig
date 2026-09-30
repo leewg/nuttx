@@ -825,5 +825,8 @@ endif
 if ARCH_SPARC
 source "libs/libc/machine/sparc/Kconfig"
 endif
+if ARCH_LOONGARCH
+source "libs/libc/machine/loongarch/Kconfig"
+endif
 
 endmenu # Architecture-Specific Support

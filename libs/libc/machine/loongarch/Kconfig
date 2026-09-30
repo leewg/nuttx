@@ -1,0 +1,18 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+
+config LOONGARCH_STRING_FUNCTION
+	bool "Enable optimized LoongArch specific string function"
+	default n
+	depends on ARCH_TOOLCHAIN_GNU
+	select RISCV_MEMSET
+
+config LOONGARCH_MEMSET
+	bool "Enable optimized memset() for LOONGARCH"
+	default n
+	select LIBC_ARCH_MEMSET
+	depends on ARCH_TOOLCHAIN_GNU
+	---help---
+		Enable optimized LOONGARCH specific memset() library function

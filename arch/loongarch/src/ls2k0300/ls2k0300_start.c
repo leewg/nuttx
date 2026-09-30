@@ -29,6 +29,7 @@
 #include <nuttx/init.h>
 #include <nuttx/arch.h>
 #include <arch/board/board.h>
+#include <nuttx/debug.h>
 
 #include <stdint.h>
 #include <inttypes.h>

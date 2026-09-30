@@ -59,19 +59,21 @@ extern void handle_watch(void);
 extern void handle_vint(void);
 extern void handle_tlb_refill(void);
 extern char except_vec_cex;
+extern dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2,
+    uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t nbr, uint64_t *cxt);
 
-uintptr_t g_exception_table[EXCCODE_INT_START] =
+void *g_exception_table[EXCCODE_INT_START] =
 {
-  [0 ... EXCCODE_INT_START - 1] = (uintptr_t)handle_reserved,
+  [0 ... EXCCODE_INT_START - 1] = handle_reserved,
 
-  [EXCCODE_ADE]  = (uintptr_t)handle_ade,
-  [EXCCODE_ALE]  = (uintptr_t)handle_ale,
-  [EXCCODE_SYS]  = (uintptr_t)handle_sys,
-  [EXCCODE_BP]   = (uintptr_t)handle_bp,
-  [EXCCODE_INE]  = (uintptr_t)handle_ri,
-  [EXCCODE_FPDIS]= (uintptr_t)handle_fpu,
-  [EXCCODE_FPE]  = (uintptr_t)handle_fpe,
-  [EXCCODE_WATCH]= (uintptr_t)handle_watch,
+  [EXCCODE_ADE]  = handle_ade,
+  [EXCCODE_ALE]  = handle_ale,
+  [EXCCODE_SYS]  = handle_sys,
+  [EXCCODE_BP]   = handle_bp,
+  [EXCCODE_INE]  = handle_ri,
+  [EXCCODE_FPDIS]= handle_fpu,
+  [EXCCODE_FPE]  = handle_fpe,
+  [EXCCODE_WATCH]= handle_watch,
 };
 
 #define ECFG_VS_128B        (7 << CSR_ECFG_VS_SHIFT)
@@ -89,6 +91,8 @@ static void configure_exception_vector(void)
   eentry    = (unsigned long)exception_handlers;
   tlbrentry = (unsigned long)exception_handlers + 80*VECSIZE;
 
+  syslog(LOG_EMERG, "eentry = 0x%016lx, tlbrentry = 0x%016lx\n", eentry, tlbrentry);
+
   csr_write64(eentry, LA_CSR_EENTRY);
   csr_write64(eentry, LA_CSR_MERRENTRY);
   csr_write64(tlbrentry, LA_CSR_TLBRENTRY);
@@ -99,19 +103,23 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
   memcpy((void *)(eentry + offset), addr, size);
   UP_DSB();
   UP_ISB();
+if(offset > (64*VECSIZE))
+  syslog(LOG_EMERG, "eentry +offset = 0x%016lx\n", (eentry + offset));
 }
 
 void set_merr_handler(unsigned long offset, void *addr, unsigned long size)
 {
   unsigned long uncac_eentry = TO_UNCAC(eentry);
-
   memcpy((void *)(uncac_eentry + offset), addr, size);
+
+  UP_DSB();
+  UP_ISB();
 }
 
 void la64_exception_attach(void)
 {
-  irq_attach(LA_IRQ_SWI0, la64_swint, NULL);
-  irq_attach(LA_IRQ_SWI1, la64_swint, NULL);
+  irq_attach(LA_IRQ_SWI0, dispatch_syscall, NULL);
+  //irq_attach(LA_IRQ_SWI1, la64_swint, NULL);
 }
 
 /****************************************************************************
@@ -124,7 +132,6 @@ void la64_exception_attach(void)
 void trap_init(void)
 {
   uint32_t ecfg, i;
-  static int run_once;
 
   ecfg = csr_read32(LA_CSR_ECFG);
   ecfg &= ~CSR_ECFG_VS;
@@ -142,14 +149,10 @@ void trap_init(void)
   for (i = 0; i < 64; i++)
     set_handler(i*VECSIZE, handle_reserved, VECSIZE);
 
-  if (!run_once)
-  {
-    memcpy((void *)tlbrentry, handle_tlb_refill, 0x80);
+  set_handler(80*VECSIZE, handle_tlb_refill, VECSIZE);
 
-    for (i = EXCCODE_TLBL; i <= EXCCODE_TLBPE; i++)
-      set_handler(i * VECSIZE, g_exception_table[i], VECSIZE);
-
-    run_once++;
+  for (i = EXCCODE_TLBL; i <= EXCCODE_TLBPE; i++) {
+    set_handler(i * VECSIZE, g_exception_table[i], VECSIZE);
   }
 
   for (i = EXCCODE_INT_START; i < EXCCODE_INT_END; i++)
@@ -158,181 +161,8 @@ void trap_init(void)
   for (i = EXCCODE_ADE; i < EXCCODE_BTDIS; i++)
     set_handler(i * VECSIZE, g_exception_table[i], VECSIZE);
 
-  set_merr_handler(0x0, &except_vec_cex, 0x80);
-
-  UP_DSB();
-  UP_ISB();
+  set_merr_handler(0x0, &except_vec_cex, VECSIZE);
 }
-
-typedef uintptr_t (*syscall_t)(unsigned int, ...);
-
-/****************************************************************************
- * Name: la64_syscall_dispatch
- *
- * Description:
- *   Call the stub function corresponding to the system call.
- *   NOTE the non-standard parameter passing:
- *     A0 = SYS_ call number
- *     A1 = param0
- *     A2 = param1
- *     A3 = param2
- *     A4 = param3
- *     A5 = param4
- *     A6 = param5
- *     A7 = SYS_ call number
- *     A7 = context (aka SP)
- *
- ****************************************************************************/
-
-#if 0
-//uintptr_t la64_syscall_dispatch(unsigned int nbr, uint64_t arg0, uint64_t arg1,
-//uintptr_t do_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,
- //   uint64_t arg4, uint64_t arg5, uint64_t *context, unsigned int nbr)
-uintptr_t do_syscall(void *context)
-{
-    struct tcb_s *rtcb = this_task();
-#if 0
-    register long a7 asm("a7") = (long)(nbr);
-    register long a0 asm("a0") = (long)(arg0);
-    register long a1 asm("a1") = (long)(arg1);
-    register long a2 asm("a2") = (long)(arg2);
-    register long a3 asm("a3") = (long)(arg3);
-    register long a4 asm("a4") = (long)(arg4);
-    register long a5 asm("a5") = (long)(arg5);
-#else
-    uint64_t a0, a1, a2, a3, a4, a5, a6, a7;
-#endif
-    syscall_t syscall_fn;
-    uintptr_t ret;
-    uintptr_t *regs = (uintptr_t *)context;
-
-    a0 = regs[REG_A0];
-    a1 = regs[REG_A1];
-    a2 = regs[REG_A2];
-    a3 = regs[REG_A3];
-    a4 = regs[REG_A4];
-    a5 = regs[REG_A5];
-    a6 = regs[REG_A6];
-    a7 = regs[REG_A7];
-
-  syslog(LOG_INFO, "TCB(%p) ERA=0x%16lx, SP=0x%16lx\n", rtcb, rtcb->xcp.regs[REG_ERA], rtcb->xcp.regs[REG_SP]);
-  syslog(LOG_EMERG, "regs(%p) ERA = 0x%016lx, SP = 0x%016lx,\n", regs, regs[REG_ERA], regs[REG_SP]);
-  syslog(LOG_EMERG, "a0 = 0x%016lx, a1 = 0x%016lx, a2 = 0x%016lx\n", a0, a1, a2);
-  syslog(LOG_EMERG, "a3 = 0x%016lx, a4 = 0x%016lx, a5 = 0x%016lx\n", a3, a4, a5);
-  syslog(LOG_EMERG, "a6 = 0x%016lx, a7 = 0x%016lx,\n", a6, a7);
-
-    //syslog(LOG_EMERG, "SYSCALL! ESTAT = 0x%x, nbr = 0x%x\n", csr_read32(LA_CSR_ESTAT), nbr);
-
-    /* Valid system call ? */
-    if (a7 > SYS_maxsyscall)
-    {
-        /* Nope, get out */
-        return -ENOSYS;
-    }
-
-    syslog(LOG_EMERG, "1\n");
-
-    regs[REG_ERA] += 4;
-    syslog(LOG_EMERG, "2\n");
-
-    /* Set the user register context to TCB */
-    rtcb->xcp.sregs = context;
-    /* Indicate that we are in a syscall handler */
-    rtcb->flags |= TCB_FLAG_SYSCALL;
-    /* Offset a0 to account for the reserved syscall */
-    a7 -= CONFIG_SYS_RESERVED;
-    //nbr -= CONFIG_SYS_RESERVED;
-    /* Find the system call from the lookup table */
-    syscall_fn = (syscall_t)g_stublookup[a7];
-    /* Run the system call, save return value locally */
-    syslog(LOG_EMERG, "3\n");
-    ret = syscall_fn(a0, a1, a2, a3, a4, a5);
-    syslog(LOG_EMERG, "4\n");
-
-    /* System call is now done */
-    rtcb->flags &= ~TCB_FLAG_SYSCALL;
-
-    /* Update percpu_s regs */
-    //la64_set_current_regs(cpu, NULL);
-
-    /* Unmask any pending signals now */
-    nxsig_unmask_pendingsignal();
-
-    return ret;
-}
-#else
-uintptr_t do_syscall(void *context)
-{
-    struct tcb_s *rtcb = this_task();
-    uintptr_t *regs = (uintptr_t *)context;
-    uint64_t a0, a1, a2, a3, a4, a5, a6, a7;
-
-    a0 = regs[REG_A0];
-    a1 = regs[REG_A1];
-    a2 = regs[REG_A2];
-    a3 = regs[REG_A3];
-    a4 = regs[REG_A4];
-    a5 = regs[REG_A5];
-    a6 = regs[REG_A6];
-    a7 = regs[REG_A7];
-
-    /* 1. 检查是否为上下文切换系统调用 (SYS_switchcontext) */
-    if (a7 == SYS_switch_context)
-    {
-        uint64_t **saveregs = (uint64_t **)a0;
-        struct tcb_s *wtcb = (struct tcb_s *)a1;
-
-        /* 保存当前任务现场指针 */
-        if (saveregs != NULL)
-        {
-            *saveregs = regs;
-        }
-
-        /* 更新当前执行 TCB */
-        /* 返回新任务 (AppBringUp) 的 xcp.regs 给汇编层的 RESTORE 宏 */
-        if (wtcb != NULL && wtcb->xcp.regs != NULL)
-        {
-            return (uintptr_t)wtcb->xcp.regs;
-        }
-        return (uintptr_t)a1;
-    }
-
-    /* 2. 检查是否为恢复上下文系统调用 (SYS_restore_context) */
-    if (a7 == SYS_restore_context)
-    {
-        struct tcb_s *wtcb = (struct tcb_s *)a0;
-        if (wtcb != NULL && wtcb->xcp.regs != NULL)
-        {
-            return (uintptr_t)wtcb->xcp.regs;
-        }
-        return (uintptr_t)a0;
-    }
-
-    /* 3. 普通系统调用继续 PC 步进 (+4) */
-    regs[REG_ERA] += 4;
-
-    if (a7 > SYS_maxsyscall)
-    {
-        return -ENOSYS;
-    }
-
-    rtcb->xcp.sregs = context;
-    rtcb->flags |= TCB_FLAG_SYSCALL;
-
-    a7 -= CONFIG_SYS_RESERVED;
-    syscall_t syscall_fn = (syscall_t)g_stublookup[a7];
-
-    uintptr_t ret = syscall_fn(a0, a1, a2, a3, a4, a5);
-
-    rtcb->flags &= ~TCB_FLAG_SYSCALL;
-
-    /* 普通 syscall 将返回值写入 a0 */
-    regs[REG_A0] = (uint64_t)ret;
-
-    /* 返回原 context 指针继续恢复执行旧任务 */
-    return (uintptr_t)regs;
-}
-#endif
 
 /****************************************************************************
  * Name: la64_regs_dump
@@ -457,6 +287,7 @@ void do_watch(uint64_t *regs)
  *
  ****************************************************************************/
 
+#if 0
 uint64_t *la64_exception_handler(uint64_t *regs)
 {
 #if 1
@@ -530,6 +361,7 @@ uint64_t *la64_exception_handler(uint64_t *regs)
 
   return regs;
 }
+#endif
 
 /****************************************************************************
  * Name: do_vint
@@ -538,7 +370,6 @@ uint64_t *la64_exception_handler(uint64_t *regs)
  *
  ****************************************************************************/
 uint64_t do_vint(uint64_t *regs)
-//uint64_t *la64_vint_handler(uint64_t *regs)
 {
   struct la64_percpu_s *percpu = la64_my_percpu();
   percpu->cur_regs = (uintptr_t)regs;
@@ -546,18 +377,14 @@ uint64_t do_vint(uint64_t *regs)
   uint32_t estat = csr_read32(LA_CSR_ESTAT);
   uint32_t irq = (estat & 0x3fff);
 
-  up_set_interrupt_context(true);
-
-  syslog(LOG_EMERG, "VINT! ESTAT = 0x%x, irq = 0x%x\n", estat, irq);
+  syslog(LOG_EMERG, "VINT! ESTAT = 0x%x, irq = 0x%x, regs = 0x%p\n", estat, irq, regs);
 
   if ((estat & CSR_ESTAT_IS) == 0) {
-    up_set_interrupt_context(false);
     percpu->cur_regs = 0;
     return regs;
   }
 
   if (irq & (1 << 11)) {
-    csr_write32(0x1, LA_CSR_TINTCLR);
     irq = LA_LOC_IRQ_BASE + INT_TI; /* TI */
   } else if (irq & 0x3fc) {
     int hwi = __builtin_ctz(irq & 0x3fc) - 2;
@@ -567,7 +394,6 @@ uint64_t do_vint(uint64_t *regs)
     csr_write32(1 << swi, LA_CSR_ESTAT);
     irq = LA_LOC_IRQ_BASE + swi;
   } else {
-    up_set_interrupt_context(false);
     percpu->cur_regs = 0;
     return regs;
   }
@@ -576,10 +402,7 @@ uint64_t do_vint(uint64_t *regs)
 
   percpu->cur_regs = 0;
 
-  up_set_interrupt_context(false);
-
-  syslog(LOG_EMERG, "VINT END! crmd = 0x%x, ecfg = 0x\n", csr_read32(LA_CSR_CRMD), csr_read32(LA_CSR_ECFG));
-
+  syslog(LOG_EMERG, "VINT_END! ESTAT = 0x%x, regs = 0x%x\n", csr_read32(LA_CSR_ESTAT), regs);
   return regs;
 }
 

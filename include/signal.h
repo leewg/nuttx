@@ -322,7 +322,7 @@ struct sigset_s
   uint32_t _elem[_SIGSET_NELEM];
 };
 
-typedef struct sigset_s sigset_t; /* Bit set of _NSIG signals */
+typedef struct sigset_s sigset_t __attribute__((aligned(8))); /* Bit set of _NSIG signals */
 
 /* Possibly volatile-qualified integer type of an object that can be accessed
  * as an atomic entity, even in the presence of asynchronous interrupts.

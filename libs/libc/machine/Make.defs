@@ -63,6 +63,9 @@ endif
 ifeq ($(CONFIG_ARCH_TRICORE),y)
 include $(TOPDIR)/libs/libc/machine/tricore/Make.defs
 endif
+ifeq ($(CONFIG_ARCH_LOONGARCH),y)
+include $(TOPDIR)/libs/libc/machine/loongarch/Make.defs
+endif
 DEPPATH += --dep-path machine
 VPATH += :machine
 
