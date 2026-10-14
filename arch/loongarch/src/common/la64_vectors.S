@@ -136,13 +136,6 @@ SYM_FUNC_START(real_tlbrefill_error_entry)
   csrrd t8, LA_CSR_TLBRSAVE
   SAVE_ALL
 
-  li.w  a0, 'T'
-  bl  up_putc
-  li.w  a0, 'L'
-  bl  up_putc
-  li.w  a0, 'B'
-  bl  up_putc
-
   move  a0, sp
   //la.abs t8, la64_tlbrefill_handler
   la.abs t8, la64_exception_handler
@@ -153,6 +146,9 @@ SYM_FUNC_START(real_tlbrefill_error_entry)
 SYM_FUNC_END(real_tlbrefill_error_entry)
 #endif
 
+#####################################################
+# using 1009
+#####################################################
   .extern do_vint
   .extern do_bp
   .extern do_fpe
@@ -227,8 +223,8 @@ SYM_FUNC_START(handle_syscall)
   SAVE_ALL
 
   move  a0, sp    /* a0 = regs */
-  bl    la64_syscall
-  //bl    do_syscall
+  bl      la64_syscall_handler
+  //bl    la64_syscall
   move  sp, a0
 
   RESTORE_ALL_AND_RET

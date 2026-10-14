@@ -33,8 +33,13 @@
 #
 ifeq ($(CONFIG_ARCH_TOOLCHAIN_GNU),y)
   CROSSDEV ?= loongarch64-linux-gnu-
-  ARCHCPUFLAGS = -march=loongarch64 -mabi=lp64d
+  ARCHCPUFLAGS = -march=loongarch64 -mabi=lp64 -mno-lsx -mno-lasx
 endif
+
+ARCHOPTIMIZATION += -mstrict-align
+
+ARCHCFLAGS += -mabi=lp64d -mcmodel=large -mstrict-align -fno-builtin-printf -fno-builtin-sprintf
+ARCHCXXFLAGS += -mabi=lp64d -mcmodel=large -mstrict-align -fno-builtin-printf -fno-builtin-sprintf
 
 ifeq ($(CONFIG_DEBUG_CUSTOMOPT),y)
   ARCHOPTIMIZATION += $(CONFIG_DEBUG_OPTLEVEL)

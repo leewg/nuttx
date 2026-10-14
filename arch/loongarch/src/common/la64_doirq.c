@@ -76,8 +76,6 @@ uint64_t *la64_doirq(int irq, uintreg_t *regs)
 
   tcb->xcp.regs = regs;
 
-  syslog(LOG_EMERG, "la64_doirq: regs = 0x%x\n", regs);
-
   /* Deliver the IRQ */
 
   irq_dispatch(irq, regs);

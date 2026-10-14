@@ -51,7 +51,7 @@
 
 void up_irqinitialize(void)
 {
-  uint64_t val;
+  uint64_t val, i;
 
   /* enable extioi mode */
   putreg32(getreg32(CHIP_CTRL0_BASE)|EXTIOI_ENABLE, CHIP_CTRL0_BASE);
@@ -61,29 +61,17 @@ void up_irqinitialize(void)
   val &= ~0x1fff;
   write_csr_ecfg(val);
 
-  /* disable all extern interrupt */
-  putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_IEN0);
-  putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_IEN1);
-  putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_IEN2);
-  putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_IEN3);
-
-  /* level trigger */
-  putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_POL0);
-  putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_POL1);
-  putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_POL2);
-  putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_POL3);
-
-  /* clear all isr */
-  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_ICLR0);
-  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_ICLR1);
-  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_ICLR2);
-  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_ICLR3);
-
-  /* clear all map to CORE isr */
-  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_CORE_ICLR0);
-  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_CORE_ICLR1);
-  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_CORE_ICLR2);
-  putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_CORE_ICLR3);
+  for (i = 0; i < 4; i++)
+  {
+    /* disable all extern interrupt */
+    putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_IEN0 + (i*4));
+    /* level trigger */
+    putreg32(0x0, INTC_BASE + LS2K0300_EXTIOI_POL0 + (i*4));
+    /* clear all isr */
+    putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_ICLR0 + (i*4));
+    /* clear all map to CORE isr */
+    putreg32(0xFFFFFFFF, INTC_BASE + LS2K0300_EXTIOI_CORE_ICLR0 + (i*4));
+  }
 
   /* Attach the common interrupt handler */
   la64_exception_attach();
@@ -105,7 +93,7 @@ void up_irqinitialize(void)
 #ifndef CONFIG_SUPPRESS_INTERRUPTS
 
   /* And finally, enable interrupts */
-  putreg32(0xf, INTC_BASE + LS2K0300_EXTIOI_IEN0);
+  putreg32(0xff, INTC_BASE + LS2K0300_EXTIOI_IEN0);
   //putreg32(0xe, INTC_BASE + LS2K0300_EXTIOI_IEN1);
   //putreg32(0xb000000e, INTC_BASE + LS2K0300_EXTIOI_IEN1);
   //putreg32(0x3f, INTC_BASE + LS2K0300_EXTIOI_IEN2);
@@ -128,19 +116,19 @@ void up_disable_irq(int irq)
   uint32_t extirq = 0, base = 0, offs = 0;
   uint32_t val;
 
-  if (irq < LA_EXT_IRQ_BASE)
+  if (irq > LA_LOC_IRQ_BASE && irq < LA_LOC_IRQ_BASE + 16)
   {
     val = read_csr_ecfg();
     val &= ~(0x1 << irq);
     write_csr_ecfg(val);
-  } else {
+  } else if (irq >= LA_EXT_IRQ_BASE && irq < LA_EXT_IRQ_BASE + 128){
     extirq = irq - LA_EXT_IRQ_BASE;
     base = (extirq/32) * 4;
     offs = extirq%32;
 
-    val = getreg32(LS2K0300_EXTIOI_IEN0 + base);
+    val = getreg32(INTC_BASE + LS2K0300_EXTIOI_IEN0 + base);
     val &= ~(0x1 << offs);
-    putreg32(val, LS2K0300_EXTIOI_IEN0 + base);
+    putreg32(val, INTC_BASE + LS2K0300_EXTIOI_IEN0 + base);
   }
 }
 
@@ -163,13 +151,13 @@ void up_enable_irq(int irq)
     val = read_csr_ecfg();
     val |= (0x1 << irq);
     write_csr_ecfg(val);
-  } else {
+  } else if (irq >= LA_EXT_IRQ_BASE && irq < LA_EXT_IRQ_BASE + 128){
     extirq = irq - LA_EXT_IRQ_BASE;
     base = (extirq/32) * 4;
     offs = extirq%32;
 
-    val = getreg32(LS2K0300_EXTIOI_IEN0 + base);
+    val = getreg32(INTC_BASE + LS2K0300_EXTIOI_IEN0 + base);
     val |= (0x1 << offs);
-    putreg32(val, LS2K0300_EXTIOI_IEN0 + base);
+    putreg32(val, INTC_BASE + LS2K0300_EXTIOI_IEN0 + base);
   }
 }

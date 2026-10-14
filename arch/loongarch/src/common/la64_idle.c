@@ -51,12 +51,6 @@
 
 void up_idle(void)
 {
-  up_putc('i');
-  up_putc('d');
-  up_putc('l');
-  up_putc('e');
-  up_putc('\r');
-  up_putc('\n');
   up_irq_enable();
 
 #if defined(CONFIG_SUPPRESS_INTERRUPTS) || defined(CONFIG_SUPPRESS_TIMER_INTS)

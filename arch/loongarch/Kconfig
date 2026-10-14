@@ -83,19 +83,6 @@ config ARCH_INTERRUPTSTACK
 	---help---
 		Size of the interrupt stack for LS2K0300.
 
-config LS2K0300_UART_BASEADDR
-	hex "UART Base Address"
-	default 0x1fe00000
-	---help---
-		Base address of UART for LS2K0300.
-		Default is the SuperIO base address.
-
-config LS2K0300_TIMER_FREQ
-	int "Timer Frequency (Hz)"
-	default 800000000
-	---help---
-		LS2K0300 timer frequency in Hz.
-
 if !BARE_METAL
 
 config PREALLOC_TIMERS

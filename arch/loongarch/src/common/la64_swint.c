@@ -87,13 +87,15 @@ uintptr_t dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
     uintptr_t ret;
     uintptr_t *regs = (uintptr_t *)context;
 
+#if 0
   syslog(LOG_INFO, "TCB(%p) ERA=0x%16lx, SP=0x%16lx\n", rtcb, rtcb->xcp.regs[REG_ERA], rtcb->xcp.regs[REG_SP]);
   syslog(LOG_EMERG, "regs(%p) ERA = 0x%016lx, SP = 0x%016lx,\n", regs, regs[REG_ERA], regs[REG_SP]);
   syslog(LOG_EMERG, "a0 = 0x%016lx, a1 = 0x%016lx, a2 = 0x%016lx\n", a0, a1, a2);
   syslog(LOG_EMERG, "a3 = 0x%016lx, a4 = 0x%016lx, a5 = 0x%016lx\n", a3, a4, a5);
   syslog(LOG_EMERG, "a6 = 0x%016lx, a7 = 0x%016lx,\n", context, a7);
+#endif
 
-    //syslog(LOG_EMERG, "SYSCALL! ESTAT = 0x%x, nbr = 0x%x\n", csr_read32(LA_CSR_ESTAT), nbr);
+    syslog(LOG_EMERG, "dispatch_syscall: ESTAT = 0x%x, nbr = 0x%x\n", csr_read32(LA_CSR_ESTAT), nbr);
 
     /* Valid system call ? */
     if (a7 > SYS_maxsyscall)
@@ -144,12 +146,16 @@ uint64_t *la64_syscall(uint64_t *regs)
 
   up_set_interrupt_context(true);
 
+  //syslog(LOG_EMERG, "la64_syscall: regs: %p cmd: %d\n", regs, regs[REG_A7]);
 #ifdef CONFIG_DEBUG_SYSCALL_INFO
-  svcinfo("Entry: regs: %p cmd: %d\n", regs, regs[REG_A7]);
+  syslog(LOG_EMERG, "Entry: regs: %p cmd: %d\n", regs, regs[REG_A7]);
 #endif
 
   if (nbr != SYS_restore_context)
+  {
+    regs[REG_ERA] += 4;
     (*running_task)->xcp.regs = regs;
+  }
 
   switch (nbr)
     {
@@ -185,7 +191,7 @@ uint64_t *la64_syscall(uint64_t *regs)
 
   (*running_task)->xcp.regs = NULL;
 
-  svcinfo("Restoring task entry ERA = 0x%" PRIx64 ", SP = 0x%" PRIx64 "\n", regs[REG_ERA], regs[REG_R3]);
+  //syslog(LOG_EMERG, "Restoring task entry ERA = 0x%" PRIx64 ", SP = 0x%" PRIx64 "\n", regs[REG_ERA], regs[REG_R3]);
   /* Report what happened.  That might difficult in the case of a context
    * switch
    */
@@ -193,14 +199,32 @@ uint64_t *la64_syscall(uint64_t *regs)
 #ifdef CONFIG_DEBUG_SYSCALL_INFO
   if (regs[REG_A7] <= SYS_switch_context)
     {
-      svcinfo("SWInt Return: Context switch!, regs = %p\n", regs);
+      syslog(LOG_EMERG, "SWInt Return: Context switch!, regs = %p\n", regs);
     }
   else
     {
-      svcinfo("SWInt Return: %" PRIxPTR "\n", regs[REG_A7]);
+      syslog(LOG_EMERG, "SWInt Return: %" PRIxPTR "\n", regs[REG_A7]);
     }
 #endif
   up_set_interrupt_context(false);
 
+  return regs;
+}
+
+uint64_t la64_syscall_handler(uint64_t *regs)
+{
+  uintptr_t ret;
+  uint32_t nbr = (uint32_t)regs[REG_A7];
+  if (nbr == SYS_switch_context || nbr == SYS_restore_context)
+  {
+    return la64_syscall(regs);
+  }
+
+  regs[REG_ERA] += 4;
+  ret = dispatch_syscall(
+      regs[REG_A0], regs[REG_A1], regs[REG_A2],
+      regs[REG_A3], regs[REG_A4], regs[REG_A5],
+      nbr, regs);
+  regs[REG_A0] = (uint64_t)ret;
   return regs;
 }

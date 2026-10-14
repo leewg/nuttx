@@ -37,6 +37,7 @@
 #include <nuttx/sched.h>
 #include <arch/csr.h>
 #include <arch/barriers.h>
+#include <arch/ls2k0300/chip.h>
 
 #include "sched/sched.h"
 #include "signal/signal.h"
@@ -91,8 +92,6 @@ static void configure_exception_vector(void)
   eentry    = (unsigned long)exception_handlers;
   tlbrentry = (unsigned long)exception_handlers + 80*VECSIZE;
 
-  syslog(LOG_EMERG, "eentry = 0x%016lx, tlbrentry = 0x%016lx\n", eentry, tlbrentry);
-
   csr_write64(eentry, LA_CSR_EENTRY);
   csr_write64(eentry, LA_CSR_MERRENTRY);
   csr_write64(tlbrentry, LA_CSR_TLBRENTRY);
@@ -103,8 +102,6 @@ void set_handler(unsigned long offset, void *addr, unsigned long size)
   memcpy((void *)(eentry + offset), addr, size);
   UP_DSB();
   UP_ISB();
-if(offset > (64*VECSIZE))
-  syslog(LOG_EMERG, "eentry +offset = 0x%016lx\n", (eentry + offset));
 }
 
 void set_merr_handler(unsigned long offset, void *addr, unsigned long size)
@@ -116,10 +113,35 @@ void set_merr_handler(unsigned long offset, void *addr, unsigned long size)
   UP_ISB();
 }
 
+void dispatch_ext_irq_default(void)
+{
+  _err("ext irq! no one pay attention to\n");
+}
+
+void dispatch_hwi_irq_default(void)
+{
+  _err("hwi4~7 irq! no one pay attention to\n");
+}
+
+void dispatch_swi_irq_default(void)
+{
+}
+
 void la64_exception_attach(void)
 {
-  irq_attach(LA_IRQ_SWI0, dispatch_syscall, NULL);
+  uint32_t i;
+
+  //irq_attach(LA_IRQ_SWI0, dispatch_syscall, NULL);
   //irq_attach(LA_IRQ_SWI1, la64_swint, NULL);
+
+  irq_attach(LA_IRQ_SWI0, dispatch_swi_irq_default, NULL);
+  irq_attach(LA_IRQ_HWI4, dispatch_hwi_irq_default, NULL);
+  irq_attach(LA_IRQ_HWI5, dispatch_hwi_irq_default, NULL);
+  irq_attach(LA_IRQ_HWI6, dispatch_hwi_irq_default, NULL);
+  irq_attach(LA_IRQ_HWI7, dispatch_hwi_irq_default, NULL);
+
+  for (i = LA_EXT_IRQ_BASE; i < LA_EXT_IRQ_BASE + 128; i++)
+    irq_attach(i, dispatch_ext_irq_default, NULL);
 }
 
 /****************************************************************************
@@ -138,13 +160,7 @@ void trap_init(void)
   ecfg |= ECFG_VS_128B;
   csr_write32(ecfg, LA_CSR_ECFG);
 
-#if 0
-  csr_write64(0x9000000000000000, LA_CSR_MERRENTRY);
-  csr_write64(0x9000000000001000, LA_CSR_TLBRENTRY);
-  csr_write64(0x9000000000002000, LA_CSR_EENTRY);
-#else
   configure_exception_vector();
-#endif
 
   for (i = 0; i < 64; i++)
     set_handler(i*VECSIZE, handle_reserved, VECSIZE);
@@ -155,11 +171,11 @@ void trap_init(void)
     set_handler(i * VECSIZE, g_exception_table[i], VECSIZE);
   }
 
-  for (i = EXCCODE_INT_START; i < EXCCODE_INT_END; i++)
-    set_handler(i * VECSIZE, handle_vint, VECSIZE);
-
   for (i = EXCCODE_ADE; i < EXCCODE_BTDIS; i++)
     set_handler(i * VECSIZE, g_exception_table[i], VECSIZE);
+
+  for (i = EXCCODE_INT_START; i < EXCCODE_INT_END; i++)
+    set_handler(i * VECSIZE, handle_vint, VECSIZE);
 
   set_merr_handler(0x0, &except_vec_cex, VECSIZE);
 }
@@ -280,88 +296,37 @@ void do_watch(uint64_t *regs)
   PANIC();
 }
 
-/****************************************************************************
- * Name: la64_exception_dispatch
- *
- * Description: IS[0]
- *
- ****************************************************************************/
-
-#if 0
-uint64_t *la64_exception_handler(uint64_t *regs)
+void *hwi_dispatch(uint32_t ip, void *regs)
 {
-#if 1
-  uint32_t estat = csr_read32(LA_CSR_ESTAT);
-  uint32_t crmd = csr_read32(LA_CSR_CRMD);
-  uint32_t prmd = csr_read32(LA_CSR_PRMD);
-  uint32_t ecode = (estat & CSR_ESTAT_EXC) >> CSR_ESTAT_EXC_SHIFT;
-#else
-  uint32_t estat,crmd,prmd,ecode;
-  estat = crmd = prmd = ecode =0x0;
-#endif
+  uint32_t map_off, route_ip;
+  uint32_t en, sr, idx, irq;
 
-  syslog(LOG_EMERG, "Exception! ESTAT = 0x%lx, ECODE = 0x%lx, CRMD = 0x%lx, PRMD = 0x%lx\n", estat, ecode, crmd, prmd);
+  route_ip = ip >> 2;
 
-  if (ecode == 0xb)
-  {
-    unsigned int nbr = (unsigned int)regs[REG_A7];
+  for (map_off = 0; map_off < 4; map_off++) {
+    if (getreg8(INTC_BASE + LS2K0300_EXTIOI_MAP + map_off) != route_ip)
+      continue;
 
-    if (nbr == SYS_switch_context)
-    {
-      uint64_t **saveregs = (uint64_t **)regs[REG_A0];
-      uintptr_t arg1 = (uintptr_t)regs[REG_A1];
-      uint64_t *next_regs = NULL;
+    en = getreg32(INTC_BASE + LS2K0300_EXTIOI_IEN0 + map_off * 4);
+    sr = getreg32(INTC_BASE + LS2K0300_EXTIOI_CORE_ISR0 + map_off * 4);
 
-      if (saveregs != NULL)
-      {
-        *saveregs = regs;
-      }
+    //syslog(LOG_EMERG, "hwi: map_off=%d,route_ip=%d, en=0x%08x, sr=0x%08x\n", map_off, route_ip, en, sr);
 
-      struct tcb_s *wtcb  = (struct tcb_s *)arg1;
-      if (wtcb != NULL && wtcb->xcp.regs != NULL)
-      {
-        next_regs = (uint64_t *)wtcb->xcp.regs;
-      }
-      else
-      {
-        next_regs = (uint64_t *)arg1;
-      }
+    sr &= en;
+    idx = 0;
 
-      syslog(LOG_EMERG, "Switch Context: current regs=%p, next regs=%p\r\n",
-          regs, next_regs);
+    while (sr != 0) {
+      idx = __builtin_ctz(sr);
+      putreg32(1U << idx, INTC_BASE + LS2K0300_EXTIOI_ISR0 + map_off * 4);
+      irq = LA_EXT_IRQ_BASE + map_off * 32 + idx;
 
-      DEBUGASSERT(next_regs != NULL);
+      regs = la64_doirq(irq, regs);
 
-      return next_regs;
+      sr &= ~(1U << idx);
     }
-    else if (nbr == SYS_restore_context)
-    {
-      struct tcb_s *wtcb = (struct tcb_s *)regs[REG_A0];
-      if (wtcb != NULL && wtcb->xcp.regs !=NULL)
-      {
-        return (uint64_t *)wtcb->xcp.regs;
-      }
-      return (uint64_t *)regs[REG_A0];
-    }
-
-    regs[REG_ERA] += 4;
-
-    uintptr_t ret = la64_syscall_dispatch(nbr,
-        regs[REG_A0], regs[REG_A1], regs[REG_A2], regs[REG_A3],
-        regs[REG_A4], regs[REG_A5], regs);
-
-    regs[REG_A0] = (uint64_t)ret;
-    return regs;
   }
-
-  syslog(LOG_EMERG, "Unhandled Exception! ECODE = 0x%x, ERA = 0x%16lx\n",
-      ecode, regs[REG_ERA]);
-  la64_regs_dump(regs);
-  PANIC();
-
   return regs;
 }
-#endif
 
 /****************************************************************************
  * Name: do_vint
@@ -377,32 +342,56 @@ uint64_t do_vint(uint64_t *regs)
   uint32_t estat = csr_read32(LA_CSR_ESTAT);
   uint32_t irq = (estat & 0x3fff);
 
-  syslog(LOG_EMERG, "VINT! ESTAT = 0x%x, irq = 0x%x, regs = 0x%p\n", estat, irq, regs);
-
+  //syslog(LOG_EMERG, "VINT! ESTAT = 0x%x, irq = 0x%x, regs = 0x%p\n", estat, irq, regs);
   if ((estat & CSR_ESTAT_IS) == 0) {
     percpu->cur_regs = 0;
+
     return regs;
   }
 
-  if (irq & (1 << 11)) {
+  if (irq & ECFGF_TIMER) {  // TI entry
     irq = LA_LOC_IRQ_BASE + INT_TI; /* TI */
-  } else if (irq & 0x3fc) {
-    int hwi = __builtin_ctz(irq & 0x3fc) - 2;
-    irq = LA_LOC_IRQ_BASE + hwi;
-  } else if (irq & 0x3) {
-    int swi = __builtin_ctz(irq & 0x3);
-    csr_write32(1 << swi, LA_CSR_ESTAT);
-    irq = LA_LOC_IRQ_BASE + swi;
-  } else {
-    percpu->cur_regs = 0;
-    return regs;
+    regs = la64_doirq(irq, regs);
   }
 
-  regs = la64_doirq(irq, regs);
+  if (irq & ECFGF_IPI) {
+    irq = LA_LOC_IRQ_BASE + INT_IPI; /* TI */
+  }
+
+  if (irq & 0x3fc) { // hwi(HWI0 ~ HWI7) entry
+    if (irq & ECFGF_IP0) {
+      regs = hwi_dispatch(ECFGF_IP0, regs);
+    }
+    if (irq & ECFGF_IP1) {
+      regs = hwi_dispatch(ECFGF_IP1, regs);
+    }
+    if (irq & ECFGF_IP2) {
+      regs = hwi_dispatch(ECFGF_IP2, regs);
+    }
+    if (irq & ECFGF_IP3) {
+      regs = hwi_dispatch(ECFGF_IP3, regs);
+    }
+    if (irq & (ECFGF_IP4 | ECFGF_IP5 | ECFGF_IP6 | ECFGF_IP7)) { // HWI7~HWI7 unused in ext mode
+      int hwi = __builtin_ctz(irq & 0x3c0);
+      irq = LA_LOC_IRQ_BASE + hwi;
+
+      regs = la64_doirq(irq, regs);
+    }
+  }
+
+  if (irq & ECFGF_SIP0) { // swi entry
+    int swi = __builtin_ctz(irq & 0x3);
+
+    csr_xchg32(0x0, 0x1 << swi, LA_CSR_ESTAT);
+    irq = LA_LOC_IRQ_BASE + swi;
+
+    //_err("SWI%d RA=0x%lx, SP=0x%lx\n", swi, regs[REG_RA], regs[REG_SP]);
+
+    regs = la64_doirq(irq, regs);
+  }
 
   percpu->cur_regs = 0;
-
-  syslog(LOG_EMERG, "VINT_END! ESTAT = 0x%x, regs = 0x%x\n", csr_read32(LA_CSR_ESTAT), regs);
+  //syslog(LOG_EMERG, "VINT_END! ESTAT = 0x%x, regs = 0x%x\n", csr_read32(LA_CSR_ESTAT), regs);
   return regs;
 }
 
@@ -494,26 +483,3 @@ void la64_fatal_handler(uint64_t *regs)
   for (;;);
 }
 #endif
-
-#if 0
-/****************************************************************************
- * Name: up_interrupt_context
- *
- * Description:
- *   Return true is we are currently executing in the interrupt handler cotext.
- *
- ****************************************************************************/
-
-bool up_interrupt_context(void)
-{
-#ifdef CONFIG_SMP
-    int cpu = up_cpu_index();
-#else
-    int cpu = 0;
-#endif
-
-    return g_percpu_ctx[cpu].current_regs != 0;
-}
-
-#endif
-

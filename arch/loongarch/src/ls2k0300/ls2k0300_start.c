@@ -118,6 +118,16 @@ void loongarch_mem_verify(void)
   DEBUGASSERT(idle_stack_size == CONFIG_IDLETHREAD_STACKSIZE);
 }
 
+void fpu_enable(void)
+{
+  uint32_t euen = csr_read32(LA_CSR_EUEN);
+  euen |= (1 << 0);
+  euen |= (1 << 16);
+  euen |= (1 << 17);
+  csr_write32(euen, LA_CSR_EUEN);
+  _info("EUEN = 0x%08x\n", csr_read32(LA_CSR_EUEN));
+}
+
 /****************************************************************************
  * Name: __ls2k0300_start
  ****************************************************************************/
@@ -126,7 +136,12 @@ void __ls2k0300_start(void)
 {
   up_set_interrupt_context(false);
 
+#ifdef USE_EARLYSERIALINIT
+  la64_earlyserialinit();
+#endif
   trap_init();
+
+  fpu_enable();
 
   up_percpu_initialize(0);
   la64_percpu_init(0);

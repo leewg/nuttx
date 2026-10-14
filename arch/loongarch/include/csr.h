@@ -709,34 +709,34 @@
 /*
  * CSR_ECFG IM
  */
-#define ECFG0_IM		0x00005fff
-#define ECFGB_SIP0		0
-#define ECFGF_SIP0		(_ULCAST_(1) << ECFGB_SIP0)
-#define ECFGB_SIP1		1
-#define ECFGF_SIP1		(_ULCAST_(1) << ECFGB_SIP1)
-#define ECFGB_IP0		2
-#define ECFGF_IP0		(_ULCAST_(1) << ECFGB_IP0)
-#define ECFGB_IP1		3
-#define ECFGF_IP1		(_ULCAST_(1) << ECFGB_IP1)
-#define ECFGB_IP2		4
-#define ECFGF_IP2		(_ULCAST_(1) << ECFGB_IP2)
-#define ECFGB_IP3		5
-#define ECFGF_IP3		(_ULCAST_(1) << ECFGB_IP3)
-#define ECFGB_IP4		6
-#define ECFGF_IP4		(_ULCAST_(1) << ECFGB_IP4)
-#define ECFGB_IP5		7
-#define ECFGF_IP5		(_ULCAST_(1) << ECFGB_IP5)
-#define ECFGB_IP6		8
-#define ECFGF_IP6		(_ULCAST_(1) << ECFGB_IP6)
-#define ECFGB_IP7		9
-#define ECFGF_IP7		(_ULCAST_(1) << ECFGB_IP7)
-#define ECFGB_PMC		10
-#define ECFGF_PMC		(_ULCAST_(1) << ECFGB_PMC)
-#define ECFGB_TIMER		11
-#define ECFGF_TIMER		(_ULCAST_(1) << ECFGB_TIMER)
-#define ECFGB_IPI		12
-#define ECFGF_IPI		(_ULCAST_(1) << ECFGB_IPI)
-#define ECFGF(hwirq)		(_ULCAST_(1) << hwirq)
+#define ECFG0_IM    0x00005fff
+#define ECFGB_SIP0  0
+#define ECFGF_SIP0  (_ULCAST_(1) << ECFGB_SIP0)
+#define ECFGB_SIP1  1
+#define ECFGF_SIP1  (_ULCAST_(1) << ECFGB_SIP1)
+#define ECFGB_IP0   2
+#define ECFGF_IP0   (_ULCAST_(1) << ECFGB_IP0)
+#define ECFGB_IP1   3
+#define ECFGF_IP1   (_ULCAST_(1) << ECFGB_IP1)
+#define ECFGB_IP2   4
+#define ECFGF_IP2   (_ULCAST_(1) << ECFGB_IP2)
+#define ECFGB_IP3   5
+#define ECFGF_IP3   (_ULCAST_(1) << ECFGB_IP3)
+#define ECFGB_IP4   6
+#define ECFGF_IP4   (_ULCAST_(1) << ECFGB_IP4)
+#define ECFGB_IP5   7
+#define ECFGF_IP5   (_ULCAST_(1) << ECFGB_IP5)
+#define ECFGB_IP6   8
+#define ECFGF_IP6   (_ULCAST_(1) << ECFGB_IP6)
+#define ECFGB_IP7   9
+#define ECFGF_IP7   (_ULCAST_(1) << ECFGB_IP7)
+#define ECFGB_PMC   10
+#define ECFGF_PMC   (_ULCAST_(1) << ECFGB_PMC)
+#define ECFGB_TIMER 11
+#define ECFGF_TIMER (_ULCAST_(1) << ECFGB_TIMER)
+#define ECFGB_IPI   12
+#define ECFGF_IPI   (_ULCAST_(1) << ECFGB_IPI)
+#define ECFGF(hwirq)    (_ULCAST_(1) << hwirq)
 
 #define ESTATF_IP       0x00003fff
 

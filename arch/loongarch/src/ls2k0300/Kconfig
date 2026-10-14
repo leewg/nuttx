@@ -19,8 +19,9 @@ config LS2K0300_HAVE_UART0
 # These are the peripheral selections proper
 
 config LS2K0300_UART0
-    bool "UART0"
+    bool "LS2K300_UART0"
     default y
     select ARCH_HAVE_UART0
     select ARCH_HAVE_SERIAL_TERMIOS
+    select LS2K0300_UART
 endmenu

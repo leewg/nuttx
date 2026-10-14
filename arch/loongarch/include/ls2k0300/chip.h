@@ -94,18 +94,18 @@
  * 8250/16550 UART Register Offsets (Compatible)
  */
 
-#define UART_THR    0x00    /* Transmitter Holding Register */
-#define UART_RBR    0x00    /* Receiver Buffer Register */
-#define UART_DLL    0x00    /* Divisor Latch Low (DLAB=1) */
-#define UART_DLH    0x01    /* Divisor Latch High (DLAB=1) */
-#define UART_IER    0x01    /* Interrupt Enable Register */
-#define UART_IIR    0x02    /* Interrupt Identification Register */
-#define UART_FCR    0x02    /* FIFO Control Register */
-#define UART_DLD    0x02    /* Divisor Latch Decimals(DLAB=1) */
-#define UART_LCR    0x03    /* Line Control Register */
-#define UART_MCR    0x04    /* Modem Control Register */
-#define UART_LSR    0x05    /* Line Status Register */
-#define UART_MSR    0x06    /* Modem Status Register */
+#define LA_UART_THR    0x00    /* Transmitter Holding Register */
+#define LA_UART_RBR    0x00    /* Receiver Buffer Register */
+#define LA_UART_DLL    0x00    /* Divisor Latch Low (DLAB=1) */
+#define LA_UART_DLH    0x01    /* Divisor Latch High (DLAB=1) */
+#define LA_UART_IER    0x01    /* Interrupt Enable Register */
+#define LA_UART_IIR    0x02    /* Interrupt Identification Register */
+#define LA_UART_FCR    0x02    /* FIFO Control Register */
+#define LA_UART_DLD    0x02    /* Divisor Latch Decimals(DLAB=1) */
+#define LA_UART_LCR    0x03    /* Line Control Register */
+#define LA_UART_MCR    0x04    /* Modem Control Register */
+#define LA_UART_LSR    0x05    /* Line Status Register */
+#define LA_UART_MSR    0x06    /* Modem Status Register */
 
 /* IER bits */
 #define UART_IER_IRxE   (1 << 0)
@@ -123,10 +123,18 @@
 /* IIR bits */
 #define UART_IIR_RxSR         (0x6)
 #define UART_IIR_RxTRIG       (0x4)
-#define UART_IIR_TxTIMEOUT    (0xc)
+#define UART_IIR_RxTIMEOUT    (0xc)
 #define UART_IIR_TxEMPTY      (0x2)
 #define UART_IIR_MSR          (0x0)
-#define UART_IIR_INTp         (1 << 0)
+
+#define UART_IIR_INTp         (1 << 0)  /* Bit0: Interrupt status (active low) */
+#define UART_IIR_INTID_SHIFT  (1)       /* Bits 1~3: Interrupt identification */
+#define UART_IIR_INTID_MASK   (7 << UART_IIR_INTID_SHIFT)
+#define UART_IIR_INTID_MSI    (0 << UART_IIR_INTID_SHIFT) /* Modem Status */
+#define UART_IIR_INTID_THRE   (1 << UART_IIR_INTID_SHIFT) /* THR Empty Interrupt */
+#define UART_IIR_INTID_RDA    (2 << UART_IIR_INTID_SHIFT) /* Receive Data Available */
+#define UART_IIR_INTID_RLS    (3 << UART_IIR_INTID_SHIFT) /* Receiver Line Status */
+#define UART_IIR_INTID_CTI    (6 << UART_IIR_INTID_SHIFT) /* Character Timeout Indicator */
 
 /**
  * UART Line Status Register (LSR) bits

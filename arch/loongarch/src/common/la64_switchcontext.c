@@ -59,8 +59,7 @@
 
 void up_switch_context(struct tcb_s *tcb, struct tcb_s *rtcb)
 {
-  syslog(LOG_EMERG, "Switching context: from TCB %p to TCB %p (entry: 0x%lx)\r\n",
-      rtcb, tcb, tcb->start);
+  //syslog(LOG_EMERG, "Switching context: from TCB %p to TCB %p (entry: 0x%lx)\r\n", rtcb, tcb, tcb->start);
 
     if (!up_interrupt_context())
     {

@@ -76,6 +76,7 @@ SECTIONS
     _srodata = .;
     *(.rodata .rodata.*)
     *(.gnu.linkonce.r.*)
+    *(.rodata1)
     . = ALIGN(16);
     _erodata = .;
   } > ram
@@ -89,8 +90,14 @@ SECTIONS
     _sdata = .;
     *(.data .data.*)
     *(.gnu.linkonce.d.*)
+    *(.data1)
     *(.data.rel.ro)
     *(.data.rel.ro.*)
+    *(.got)
+    *(.got.plt)
+    *(.sdata .sdata.*)
+    *(.gnu.linkonce.s.*)
+    *(.sdata2 .sdata2.*)
     . = ALIGN(16);
     _edata = .;
   } > ram
@@ -100,6 +107,8 @@ SECTIONS
   {
     . = ALIGN(16);
     _sbss = .;
+    *(.sbss .sbss.*)
+    *(.gnu.linkonce.sb.*)
     *(.bss .bss.*)
     *(.gnu.linkonce.b.*)
     *(COMMON)
