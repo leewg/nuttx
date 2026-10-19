@@ -191,7 +191,6 @@ static const struct uart_ops_s g_uart_ops =
 #ifdef CONFIG_LS2K0300_UART0
 static char g_uart0rxbuffer[CONFIG_UART0_RXBUFSIZE];
 static char g_uart0txbuffer[CONFIG_UART0_TXBUFSIZE];
-static uint32_t g_rxdata;
 
 static struct up_dev_s g_uart0priv =
 {
@@ -266,7 +265,7 @@ static int la64_setup(struct uart_dev_s *dev)
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
   uint64_t apb_clock = 100000000; //uart use apb clock, 125Mhz default
   uint64_t brtc, dec;
-  unsigned char cfg;
+  //unsigned char cfg;
 
 #if 0
   _info("UART setup: regs:\n");
@@ -307,8 +306,8 @@ static int la64_setup(struct uart_dev_s *dev)
   //la64_serialout(priv, LA_UART_IER, 0x0);
   la64_serialout(priv, LA_UART_MCR, 0x0);
 
-  cfg = la64_serialin(priv, LA_UART_LSR);
-  cfg = la64_serialin(priv, LA_UART_MSR);
+  la64_serialin(priv, LA_UART_LSR);
+  la64_serialin(priv, LA_UART_MSR);
 
   priv->im = 0;
   //priv->im = la64_serialin(priv, LA_UART_IER) & 0xff;

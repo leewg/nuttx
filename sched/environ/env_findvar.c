@@ -25,6 +25,10 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <nuttx/debug.h>
+#include <sched/sched.h>
+#include <assert.h>
+#include <execinfo.h>
 
 #ifndef CONFIG_DISABLE_ENVIRON
 
@@ -45,19 +49,32 @@
 
 static bool env_cmpname(const char *pszname, const char *peqname)
 {
-  /* Search until we find anything different in the two names */
-
-  for (; *pszname == *peqname; pszname++, peqname++)
+  if (pszname == NULL || peqname == NULL)
+  {
+    ferr("env_cmpname: NULL param psz=%p, pqe=%p pid=%d tcb=%p\n",
+        pszname, peqname, nxsched_getpid(), this_task());
     {
+      void *bt[10];
+      int n = la64_backtrace_reg(bt, &bt);
+      if (n > 0)
+      {
+        backtrace_symbols_fd(bt, n, STDERR_FILENO);
+      }
     }
-
-  /* On success, pszname will end with '\0' and peqname with '=' */
+    return false;
+  }
+  for (; *pszname == *peqname; pszname++, peqname++)
+  {
+    if (*pszname == '\0' || *peqname == '\0')
+    {
+      break;
+    }
+  }
 
   if (*pszname == '\0' && *peqname == '=')
-    {
-      return true;
-    }
-
+  {
+    return true;
+  }
   return false;
 }
 
@@ -98,16 +115,14 @@ ssize_t env_findvar(FAR struct task_group_s *group, FAR const char *pname)
       return -ENOENT;
     }
 
-  /* Search for a name=value string with matching name */
-
   for (i = 0; group->tg_envp[i] != NULL; i++)
+  {
+    ferr("env_findvar: i=%zd entry=%p\n", i, (FAR void *)group->tg_envp[i]);
+    if (env_cmpname(pname, group->tg_envp[i]))
     {
-      if (env_cmpname(pname, group->tg_envp[i]))
-        {
-          return i;
-        }
+      return i;
     }
-
+  }
   return -ENOENT;
 }
 

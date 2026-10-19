@@ -26,6 +26,7 @@
 
 #ifndef __ARCH_LOONGARCH64_INCLUDE_CSR_H
 #define __ARCH_LOONGARCH64_INCLUDE_CSR_H
+#include <nuttx/bits.h>
 
 /****************************************************************************
  * Pre-processor Definitions

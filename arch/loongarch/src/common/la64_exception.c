@@ -60,7 +60,7 @@ extern void handle_watch(void);
 extern void handle_vint(void);
 extern void handle_tlb_refill(void);
 extern char except_vec_cex;
-extern dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2,
+extern uintptr_t dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2,
     uint64_t arg3, uint64_t arg4, uint64_t arg5, uint64_t nbr, uint64_t *cxt);
 
 void *g_exception_table[EXCCODE_INT_START] =
@@ -113,17 +113,17 @@ void set_merr_handler(unsigned long offset, void *addr, unsigned long size)
   UP_ISB();
 }
 
-void dispatch_ext_irq_default(void)
+int dispatch_ext_irq_default(int irq, void *cnxt, void *arg)
 {
   _err("ext irq! no one pay attention to\n");
 }
 
-void dispatch_hwi_irq_default(void)
+int dispatch_hwi_irq_default(int irq, void *cnxt, void *arg)
 {
   _err("hwi4~7 irq! no one pay attention to\n");
 }
 
-void dispatch_swi_irq_default(void)
+int dispatch_swi_irq_default(int irq, void *cnxt, void *arg)
 {
 }
 
@@ -221,13 +221,13 @@ void do_ale(uint64_t *regs, bool user)
 
 void do_bp(uint64_t *regs, bool user)
 {
-  _err("BP: Breakpoint at ERA=%p\n", regs[REG_ERA]);
+  _err("BP: Breakpoint at ERA=0x%016" PRIxPTR "\n", regs[REG_ERA]);
   regs[REG_ERA] += 4;
 }
 
 void do_ri(uint64_t *regs, bool user)
 {
-  _err("INE: Illegal instruction at ERA=%p\n", regs[REG_ERA]);
+  _err("INE: Illegal instruction at ERA=0x%016lx\n", regs[REG_ERA]);
 
   if (!user)
     {
@@ -242,8 +242,19 @@ void do_ri(uint64_t *regs, bool user)
 
 void do_reserved(uint64_t *regs)
 {
-  _err("Reserved exception: ERA=%p\n", regs[REG_ERA]);
+  _err("Reserved exception: ERA=0x%016lx\n", regs[REG_ERA]);
   la64_regs_dump(regs);
+
+  /* Print a small backtrace to help find the kernel call chain that led here */
+  {
+    void *bt[16];
+    int n = la64_backtrace_reg(regs, bt);
+    if (n > 0)
+    {
+      backtrace_symbols_fd(bt, n, STDERR_FILENO);
+    }
+  }
+
   PANIC();
 }
 
@@ -254,49 +265,49 @@ void cache_parity_error(void)
   __asm__ __volatile__("csrrd %0, 0x30" : "=r"(merrera));
   __asm__ __volatile__("csrrd %0, 0x31" : "=r"(merrctl));
 
-  _err("Cache error: MERRERA=%016llx MERRCTL=%016llx\n", merrera, merrctl);
+  _err("Cache error: MERRERA=0x%016lx MERRCTL=0x%016lx\n", merrera, merrctl);
   PANIC();
 }
 
 void do_fpe(uint64_t *regs)
 {
-  _err("FPE exception: ERA=%p\n", regs[REG_ERA]);
+  _err("FPE exception: ERA=0x%016lx\n", regs[REG_ERA]);
   la64_regs_dump(regs);
   PANIC();
 }
 
 void do_fpu(uint64_t *regs)
 {
-  _err("FPU exception: ERA=%p\n", regs[REG_ERA]);
+  _err("FPU exception: ERA=0x%016lx\n", regs[REG_ERA]);
   la64_regs_dump(regs);
   PANIC();
 }
 void do_lsx(uint64_t *regs)
 {
-  _err("LSX exception: ERA=%p\n", regs[REG_ERA]);
+  _err("LSX exception: ERA=0x%016lx\n", regs[REG_ERA]);
   la64_regs_dump(regs);
   PANIC();
 }
 void do_lasx(uint64_t *regs)
 {
-  _err("LASX exception: ERA=%p\n", regs[REG_ERA]);
+  _err("LASX exception: ERA=0x%016lx\n", regs[REG_ERA]);
   la64_regs_dump(regs);
   PANIC();
 }
 void do_lbt(uint64_t *regs)
 {
-  _err("LBT exception: ERA=%p\n", regs[REG_ERA]);
+  _err("LBT exception: ERA=0x%016lx\n", regs[REG_ERA]);
   la64_regs_dump(regs);
   PANIC();
 }
 void do_watch(uint64_t *regs)
 {
-  _err("WATCH exception: ERA=%p\n", regs[REG_ERA]);
+  _err("WATCH exception: ERA=0x%016lx\n", regs[REG_ERA]);
   la64_regs_dump(regs);
   PANIC();
 }
 
-void *hwi_dispatch(uint32_t ip, void *regs)
+uint64_t *hwi_dispatch(uint32_t ip, uint64_t *regs)
 {
   uint32_t map_off, route_ip;
   uint32_t en, sr, idx, irq;
@@ -334,7 +345,7 @@ void *hwi_dispatch(uint32_t ip, void *regs)
  * Description: IS[1~13]
  *
  ****************************************************************************/
-uint64_t do_vint(uint64_t *regs)
+uint64_t *do_vint(uint64_t *regs)
 {
   struct la64_percpu_s *percpu = la64_my_percpu();
   percpu->cur_regs = (uintptr_t)regs;
@@ -471,7 +482,7 @@ void la64_fatal_handler(uint64_t *regs)
 #if CONFIG_SMP_NCPUS > 1
   syslog(LOG_EMERG, "  CPU:    %" PRIu32 "\n", percpu->cpu);
 #endif
-  syslog(LOG_EMERG, "  ESTAT:  0x%016" PRIx64 " [Ecode: 0x%02" PRIx32 "]\n", estat, ecode);
+  syslog(LOG_EMERG, "  ESTAT:  0x%016" PRIx64 " [Ecode: 0x%016" PRIx64 "]\n", estat, ecode);
   syslog(LOG_EMERG, "  ERA:    0x%016" PRIx64 " (Fault PC)\n", era);
   syslog(LOG_EMERG, "  BADV:   0x%016" PRIx64 " (Fault Address)\n", badv);
   syslog(LOG_EMERG, "--------------------------------------------------\n");

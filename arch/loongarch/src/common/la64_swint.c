@@ -55,6 +55,8 @@ typedef uintptr_t (*syscall_t)(unsigned int, ...);
  * Private Functions
  ****************************************************************************/
 
+#ifdef CONFIG_LIB_SYSCALL
+
 /****************************************************************************
  * Name: syscall_dispatch
  *
@@ -72,7 +74,7 @@ typedef uintptr_t (*syscall_t)(unsigned int, ...);
  *
  ****************************************************************************/
 
-uintptr_t dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,
+uint64_t dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t arg3,
     uint64_t arg4, uint64_t arg5, uint64_t nbr, uint64_t *context)
 {
     struct tcb_s *rtcb = this_task();
@@ -84,8 +86,8 @@ uintptr_t dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
     register long a4 asm("a4") = (long)(arg4);
     register long a5 asm("a5") = (long)(arg5);
     syscall_t syscall_fn;
-    uintptr_t ret;
-    uintptr_t *regs = (uintptr_t *)context;
+    uint64_t *regs = (uintptr_t *)context;
+    uint64_t ret;
 
 #if 0
   syslog(LOG_INFO, "TCB(%p) ERA=0x%16lx, SP=0x%16lx\n", rtcb, rtcb->xcp.regs[REG_ERA], rtcb->xcp.regs[REG_SP]);
@@ -95,7 +97,7 @@ uintptr_t dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
   syslog(LOG_EMERG, "a6 = 0x%016lx, a7 = 0x%016lx,\n", context, a7);
 #endif
 
-    syslog(LOG_EMERG, "dispatch_syscall: ESTAT = 0x%x, nbr = 0x%x\n", csr_read32(LA_CSR_ESTAT), nbr);
+    syslog(LOG_EMERG, "dispatch_syscall: ESTAT = 0x%016lx, nbr = %d\n", csr_read32(LA_CSR_ESTAT), nbr);
 
     /* Valid system call ? */
     if (a7 > SYS_maxsyscall)
@@ -126,6 +128,7 @@ uintptr_t dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t
 
     return ret;
 }
+#endif /* CONFIG_LIB_SYSCALL */
 
 /****************************************************************************
  * Name: la64_syscall
@@ -211,10 +214,11 @@ uint64_t *la64_syscall(uint64_t *regs)
   return regs;
 }
 
-uint64_t la64_syscall_handler(uint64_t *regs)
+uint64_t *la64_syscall_handler(uint64_t *regs)
 {
-  uintptr_t ret;
+  uint64_t ret;
   uint32_t nbr = (uint32_t)regs[REG_A7];
+
   if (nbr == SYS_switch_context || nbr == SYS_restore_context)
   {
     return la64_syscall(regs);
@@ -225,6 +229,7 @@ uint64_t la64_syscall_handler(uint64_t *regs)
       regs[REG_A0], regs[REG_A1], regs[REG_A2],
       regs[REG_A3], regs[REG_A4], regs[REG_A5],
       nbr, regs);
-  regs[REG_A0] = (uint64_t)ret;
+  regs[REG_A0] = ret;
+
   return regs;
 }

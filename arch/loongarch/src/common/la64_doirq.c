@@ -59,9 +59,14 @@
  * Public Functions
  ****************************************************************************/
 
-uint64_t *la64_doirq(int irq, uintreg_t *regs)
+uint64_t *la64_doirq(int irq, uint64_t *regs)
 {
+  struct tcb_s **running_task = &g_running_tasks[this_cpu()];
+  bool restore_context = false;
   struct tcb_s *tcb = this_task();
+  bool is_in_interrupt = up_interrupt_context();
+
+  (*running_task)->xcp.regs = regs;
 
   /* Current regs non-zero indicates that we are processing an interrupt;
    * current_regs is also used to manage interrupt level context switches.
@@ -70,11 +75,13 @@ uint64_t *la64_doirq(int irq, uintreg_t *regs)
    * processing an interrupt. In this case, current_regs will be non-NULL.
    */
 
-  DEBUGASSERT(!up_interrupt_context());
+  //DEBUGASSERT(!up_interrupt_context());
+  if (!is_in_interrupt)
+  {
+    tcb->xcp.regs = regs;
+  }
 
   up_set_interrupt_context(true);
-
-  tcb->xcp.regs = regs;
 
   /* Deliver the IRQ */
 
@@ -83,10 +90,8 @@ uint64_t *la64_doirq(int irq, uintreg_t *regs)
 
   /* Check for a context switch. */
 
-  if (regs != tcb->xcp.regs)
+  if (*running_task != tcb)
   {
-    struct tcb_s **running_task = &g_running_tasks[this_cpu()];
-
 #ifdef CONFIG_ARCH_ADDRENV
       /* Make sure that the address environment for the previously
        * running task is closed down gracefully (data caches dump,
@@ -113,13 +118,17 @@ uint64_t *la64_doirq(int irq, uintreg_t *regs)
   /* Set irq flag */
 
   up_set_interrupt_context(false);
+
   regs = tcb->xcp.regs;
 
   /* (*running_task)->xcp.regs is about to become invalid
    * and will be marked as NULL to avoid misusage.
    */
 
-  tcb->xcp.regs = NULL;
+  if (!is_in_interrupt)
+  {
+    (*running_task)->xcp.regs = NULL;
+  }
 
   return regs;
 }

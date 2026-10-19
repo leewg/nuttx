@@ -61,6 +61,8 @@
 #define INT_STACK_SIZE   0
 #endif
 
+#define REG_WIDTH (2 * (int)sizeof(uintreg_t))
+
 /* Determine which (if any) console driver to use.  If a console is enabled
  * and no other console device is specified, then a serial console is
  * assumed.
@@ -267,9 +269,12 @@ void la64_color_intstack(void);
 #  define la64_color_intstack()
 #endif
 
+uint64_t *la64_doirq(int irq, uint64_t *regs);
 void la64_sigdeliver(void);
 int la64_swint(int irq, void *context, void *arg);
 
+/* backtrace header */
+int la64_backtrace_reg(const uint64_t *regs, void **buf);
 
 /****************************************************************************
  * Name: la64_jump_to_user

@@ -52,8 +52,10 @@
  * Private Data
  ****************************************************************************/
 
+#if 0
 static unsigned int hda_freq;
 static unsigned int hda_1us_cnt = 30;
+#endif
 
 /****************************************************************************
  * Private Functions

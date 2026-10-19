@@ -38,6 +38,6 @@ CMN_CSRCS += la64_stable_timer.c
 CMN_CSRCS += la64_exception.c la64_doirq.c la64_swint.c
 CMN_CSRCS += la64_percpu.c
 
-CMN_CSRCS += la64_debug.c
+CMN_CSRCS += la64_debug.c la64_backtrace.c
 
 CMN_CSRCS += la64_sigdeliver.c la64_schedulesigaction.c

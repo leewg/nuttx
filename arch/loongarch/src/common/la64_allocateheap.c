@@ -74,7 +74,7 @@ void weak_function up_allocate_heap(void **heap_start, size_t *heap_size)
 
   ustart = ALIGN_UP(ustart, 8);
 
-  *heap_start = ustart;
+  *heap_start = (void *)ustart;
   *heap_size = uend - ustart;
   //*heap_start = g_idle_topstack;
   //*heap_size = CONFIG_RAM_END - (size_t)g_idle_topstack;

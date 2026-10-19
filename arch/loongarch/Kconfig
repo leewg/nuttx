@@ -51,8 +51,8 @@ config RAM_START
 		The physical start address of usable RAM.
 
 config RAM_SIZE
-	hex "End of RAM"
-	default 0x10000000
+	int "End of RAM"
+	default 268435456
 	---help---
 		The physical end address of usable RAM(256MB).
 

@@ -66,6 +66,7 @@ void la64_sigdeliver(void)
    */
 
   int16_t saved_irqcount;
+  irqstate_t flags = (irqstate_t)regs[REG_PRMD];
 #endif
 
   sinfo("rtcb=%p sigdeliver=%p sigpendactionq.head=%p\n",
@@ -88,7 +89,7 @@ retry:
 
   while (rtcb->irqcount > 0)
     {
-      leave_critical_section(regs[REG_INT_CTX]);
+      leave_critical_section(flags);
     }
 #endif /* CONFIG_SMP */
 
@@ -109,7 +110,7 @@ retry:
    * errno that is needed by the user logic (it is probably EINTR).
    */
 
-  sinfo("Resuming EPC: %" PRIxREG " INT_CTX: %" PRIxREG "\n",
+  sinfo("Resuming EPC: %" PRIx64 " INT_CTX: %" PRIx64 "\n",
       regs[REG_ERA], regs[REG_PRMD]);
 
 #ifdef CONFIG_SMP
@@ -132,7 +133,7 @@ retry:
       (rtcb->flags & TCB_FLAG_SIGNAL_ACTION) == 0)
     {
 #ifdef CONFIG_SMP
-      leave_critical_section(regs[REG_INT_CTX]);
+      leave_critical_section(flags);
 #endif
       goto retry;
     }
@@ -159,6 +160,9 @@ retry:
   leave_critical_section(up_irq_save());
 #endif
 
+  /* Point xcp.regs back to saved_regs before full context restore */
   rtcb->xcp.regs = regs;
+
+  /* Perform full context restore on LA64 */
   la64_fullcontextrestore();
 }

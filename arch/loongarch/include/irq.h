@@ -227,7 +227,8 @@
 #  define REG_FCC6      (38)
 #  define REG_FCC7      (39)
 #  define REG_FCSR      (40)
-#  define FPU_XCPT_REGS     (40)
+
+#  define FPU_XCPT_REGS     (42)
 
 #  define TP_F0   (FPU_REG_WIDTH * REG_F0)
 #  define TP_F1   (FPU_REG_WIDTH * REG_F1)
@@ -288,36 +289,36 @@
 /* friendly define */
 #define REG_ZERO  (REG_R0)     /* $0  - Always zero */
 #define REG_RA    (REG_R1)     /* $1  - Return address */
-#define REG_TP    (REG_R2)     /* $2  - Stack pointer */
-#define REG_SP    (REG_R3)     /* $3  - Global pointer */
-#define REG_A0    (REG_R4)     /* $4  - Thread pointer */
-#define REG_A1    (REG_R5)     /* $5  - Argument/Return 0 */
-#define REG_A2    (REG_R6)     /* $6  - Argument/Return 1 */
-#define REG_A3    (REG_R7)     /* $7  - Argument 2 */
-#define REG_A4    (REG_R8)     /* $8  - Argument 3 */
-#define REG_A5    (REG_R9)     /* $9  - Argument 4 */
-#define REG_A6    (REG_R10)    /* $10 - Argument 5 */
-#define REG_A7    (REG_R11)    /* $11 - Argument 6 */
-#define REG_T0    (REG_R12)    /* $12 - Argument 7 */
-#define REG_T1    (REG_R13)    /* $13 - Temporary 0 */
-#define REG_T2    (REG_R14)    /* $14 - Temporary 1 */
-#define REG_T3    (REG_R15)    /* $15 - Temporary 2 */
-#define REG_T4    (REG_R16)    /* $16 - Temporary 3 */
-#define REG_T5    (REG_R17)    /* $17 - Temporary 4 */
-#define REG_T6    (REG_R18)    /* $18 - Temporary 5 */
-#define REG_T7    (REG_R19)    /* $19 - Temporary 6 */
-#define REG_T8    (REG_R20)    /* $20 - Temporary 7 */
-#define REG_U0    (REG_R21)    /* $21 - Temporary 8 */
-#define REG_FP    (REG_R22)    /* $22 - Reserved (nomips16) */
-#define REG_S0    (REG_R23)    /* $23 - Frame pointer */
-#define REG_S1    (REG_R24)    /* $24 - Saved 0 */
-#define REG_S2    (REG_R25)    /* $25 - Saved 1 */
-#define REG_S3    (REG_R26)    /* $26 - Saved 2 */
-#define REG_S4    (REG_R27)    /* $27 - Saved 3 */
-#define REG_S5    (REG_R28)    /* $28 - Saved 4 */
-#define REG_S6    (REG_R29)    /* $29 - Saved 5 */
-#define REG_S7    (REG_R30)    /* $30 - Saved 6 */
-#define REG_S8    (REG_R31)    /* $31 - Saved 7 */
+#define REG_TP    (REG_R2)     /* $2  - Thread pointer */
+#define REG_SP    (REG_R3)     /* $3  - Stack pointer */
+#define REG_A0    (REG_R4)     /* $4  - Argument/Return 0*/
+#define REG_A1    (REG_R5)     /* $5  - Argument/Return 1 */
+#define REG_A2    (REG_R6)     /* $6  - Argument 2 */
+#define REG_A3    (REG_R7)     /* $7  - Argument 3 */
+#define REG_A4    (REG_R8)     /* $8  - Argument 4 */
+#define REG_A5    (REG_R9)     /* $9  - Argument 5 */
+#define REG_A6    (REG_R10)    /* $10 - Argument 6 */
+#define REG_A7    (REG_R11)    /* $11 - Argument 7 */
+#define REG_T0    (REG_R12)    /* $12 - Temporary 0 */
+#define REG_T1    (REG_R13)    /* $13 - Temporary 1 */
+#define REG_T2    (REG_R14)    /* $14 - Temporary 2 */
+#define REG_T3    (REG_R15)    /* $15 - Temporary 3 */
+#define REG_T4    (REG_R16)    /* $16 - Temporary 4 */
+#define REG_T5    (REG_R17)    /* $17 - Temporary 5 */
+#define REG_T6    (REG_R18)    /* $18 - Temporary 6 */
+#define REG_T7    (REG_R19)    /* $19 - Temporary 7 */
+#define REG_T8    (REG_R20)    /* $20 - Temporary 8 */
+#define REG_U0    (REG_R21)    /* $21 - Reserved  */
+#define REG_FP    (REG_R22)    /* $22 - Frame Pointer */
+#define REG_S0    (REG_R23)    /* $23 - Saved 0 */
+#define REG_S1    (REG_R24)    /* $24 - Saved 1 */
+#define REG_S2    (REG_R25)    /* $25 - Saved 2 */
+#define REG_S3    (REG_R26)    /* $26 - Saved 3 */
+#define REG_S4    (REG_R27)    /* $27 - Saved 4 */
+#define REG_S5    (REG_R28)    /* $28 - Saved 5 */
+#define REG_S6    (REG_R29)    /* $29 - Saved 6 */
+#define REG_S7    (REG_R30)    /* $30 - Saved 7 */
+#define REG_S8    (REG_R31)    /* $31 - Saved 8 */
 
 #define REG_CRMD    CSR_CRMD  /* Thread switch */
 #define REG_PRMD    CSR_PRMD  /* save these */

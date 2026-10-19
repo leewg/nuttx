@@ -143,11 +143,10 @@ void up_disable_irq(int irq)
 void up_enable_irq(int irq)
 {
   uint32_t extirq = 0, base = 0, offs = 0;
-  uint32_t val, bit;
+  uint32_t val;
 
   if (irq > LA_LOC_IRQ_BASE && irq < LA_LOC_IRQ_BASE + 16)
   {
-    bit = irq - LA_LOC_IRQ_BASE;
     val = read_csr_ecfg();
     val |= (0x1 << irq);
     write_csr_ecfg(val);
