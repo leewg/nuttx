@@ -47,11 +47,11 @@ void up_dump_register(void *dumpregs)
 {
   volatile uintreg_t *regs = dumpregs ? dumpregs : running_regs();
 
-  _alert("  ERA  : %0*" PRIxPTR "  PRMD : %0*" PRIxPTR "  CRMD : %0*" PRIxPTR "\n",
+  _alert("  ERA   : %0*" PRIxPTR "  PRMD : %0*" PRIxPTR "  CRMD : %0*" PRIxPTR "\n",
       REG_WIDTH, regs[REG_ERA],
       REG_WIDTH, regs[REG_PRMD],
       REG_WIDTH, regs[REG_CRMD]);
-  _alert("  ESTAT: %0*" PRIxPTR "  BADV : %0*" PRIxPTR "  ECFG : %0*" PRIxPTR "  EUEN : %0*" PRIxPTR "\n",
+  _alert("  ESTAT : %0*" PRIxPTR "  BADV : %0*" PRIxPTR "  ECFG : %0*" PRIxPTR "  EUEN : %0*" PRIxPTR "\n",
       REG_WIDTH, regs[REG_ESTAT],
       REG_WIDTH, regs[REG_BADV],
       REG_WIDTH, regs[REG_ECFG],

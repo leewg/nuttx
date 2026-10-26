@@ -85,7 +85,7 @@ void *g_exception_table[EXCCODE_INT_START] =
 
 unsigned long eentry;
 unsigned long tlbrentry;
-long exception_handlers[VECSIZE * 128 / sizeof(long)] aligned_data(SZ_64K);
+long exception_handlers[VECSIZE * 128 / sizeof(long)] locate_data(".data") aligned_data(SZ_64K);
 
 static void configure_exception_vector(void)
 {
@@ -116,15 +116,18 @@ void set_merr_handler(unsigned long offset, void *addr, unsigned long size)
 int dispatch_ext_irq_default(int irq, void *cnxt, void *arg)
 {
   _err("ext irq! no one pay attention to\n");
+  return 0;
 }
 
 int dispatch_hwi_irq_default(int irq, void *cnxt, void *arg)
 {
   _err("hwi4~7 irq! no one pay attention to\n");
+  return 0;
 }
 
 int dispatch_swi_irq_default(int irq, void *cnxt, void *arg)
 {
+  return 0;
 }
 
 void la64_exception_attach(void)
@@ -350,55 +353,57 @@ uint64_t *do_vint(uint64_t *regs)
   struct la64_percpu_s *percpu = la64_my_percpu();
   percpu->cur_regs = (uintptr_t)regs;
 
-  uint32_t estat = csr_read32(LA_CSR_ESTAT);
-  uint32_t irq = (estat & 0x3fff);
+  uint32_t estat = csr_read32(LA_CSR_ESTAT) & 0x3fff;
 
-  //syslog(LOG_EMERG, "VINT! ESTAT = 0x%x, irq = 0x%x, regs = 0x%p\n", estat, irq, regs);
+  //syslog(LOG_EMERG, "VINT! ESTAT = 0x%x, regs = 0x%p\n", estat, regs);
   if ((estat & CSR_ESTAT_IS) == 0) {
     percpu->cur_regs = 0;
 
     return regs;
   }
 
-  if (irq & ECFGF_TIMER) {  // TI entry
-    irq = LA_LOC_IRQ_BASE + INT_TI; /* TI */
-    regs = la64_doirq(irq, regs);
+  if (estat & ECFGF_TIMER) {  // TI entry
+    uint32_t birq = LA_LOC_IRQ_BASE + INT_TI; /* TI */
+    regs = la64_doirq(birq, regs);
+    //syslog(LOG_EMERG, "timer int, regs = 0x%016lx\n", regs);
   }
 
-  if (irq & ECFGF_IPI) {
-    irq = LA_LOC_IRQ_BASE + INT_IPI; /* TI */
+  if (estat & ECFGF_IPI) {
+    uint32_t birq = LA_LOC_IRQ_BASE + INT_IPI; /* TI */
+    //regs = la64_doirq(birq, regs);
   }
 
-  if (irq & 0x3fc) { // hwi(HWI0 ~ HWI7) entry
-    if (irq & ECFGF_IP0) {
+  if (estat & 0x3fc) { // hwi(HWI0 ~ HWI7) entry
+    if (estat & ECFGF_IP0) {
       regs = hwi_dispatch(ECFGF_IP0, regs);
     }
-    if (irq & ECFGF_IP1) {
+    if (estat & ECFGF_IP1) {
       regs = hwi_dispatch(ECFGF_IP1, regs);
     }
-    if (irq & ECFGF_IP2) {
+    if (estat & ECFGF_IP2) {
       regs = hwi_dispatch(ECFGF_IP2, regs);
     }
-    if (irq & ECFGF_IP3) {
+    if (estat & ECFGF_IP3) {
       regs = hwi_dispatch(ECFGF_IP3, regs);
     }
-    if (irq & (ECFGF_IP4 | ECFGF_IP5 | ECFGF_IP6 | ECFGF_IP7)) { // HWI7~HWI7 unused in ext mode
-      int hwi = __builtin_ctz(irq & 0x3c0);
-      irq = LA_LOC_IRQ_BASE + hwi;
+    if (estat & (ECFGF_IP4 | ECFGF_IP5 | ECFGF_IP6 | ECFGF_IP7)) { // HWI7~HWI7 unused in ext mode
+      int hwi = __builtin_ctz(estat & 0x3c0);
+      uint32_t birq = LA_LOC_IRQ_BASE + hwi;
 
-      regs = la64_doirq(irq, regs);
+      regs = la64_doirq(birq, regs);
     }
   }
 
-  if (irq & ECFGF_SIP0) { // swi entry
-    int swi = __builtin_ctz(irq & 0x3);
+  if (estat& ECFGF_SIP0) { // swi entry
+    int swi = __builtin_ctz(estat & 0x3);
+    uint32_t birq;
 
     csr_xchg32(0x0, 0x1 << swi, LA_CSR_ESTAT);
-    irq = LA_LOC_IRQ_BASE + swi;
+    birq = LA_LOC_IRQ_BASE + swi;
 
     //_err("SWI%d RA=0x%lx, SP=0x%lx\n", swi, regs[REG_RA], regs[REG_SP]);
 
-    regs = la64_doirq(irq, regs);
+    regs = la64_doirq(birq, regs);
   }
 
   percpu->cur_regs = 0;

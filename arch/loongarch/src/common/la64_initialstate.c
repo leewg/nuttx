@@ -25,6 +25,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <nuttx/debug.h>
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -87,8 +88,8 @@ void up_initial_state(struct tcb_s *tcb)
     return;
   }
 
-  topstack = (uintptr_t)tcb->stack_base_ptr + tcb->adj_stack_size;
-  topstack &= ~0xfUL;
+  topstack = (uint64_t)tcb->stack_base_ptr + tcb->adj_stack_size;
+  topstack &= ~((uint64_t)15);
 
 #ifdef CONFIG_ARCH_KERNEL_STACK
   /* Use the process kernel stack to store context for user processes */
@@ -103,7 +104,7 @@ void up_initial_state(struct tcb_s *tcb)
     }
 #endif
 
-  xcp->regs = (uintreg_t *)(topstack - XCPTCONTEXT_SIZE);
+  xcp->regs = (uint64_t *)(topstack - XCPTCONTEXT_SIZE);
   memset(xcp->regs, 0, XCPTCONTEXT_SIZE);
 
   /* Save the initial stack pointer.  Hmmm.. the stack is set to the very
@@ -114,15 +115,26 @@ void up_initial_state(struct tcb_s *tcb)
 
   xcp->regs[REG_SP]      = topstack;
 
+#if 0
+  /* DEBUG: task entry initialization */
+  syslog(LOG_EMERG, "up_initial_state: tcb=%p pid=%d name=%s start=0x%lx stack_base=0x%lx sp=0x%lx tp=0x%lx\n",
+      tcb, tcb->pid, tcb->name ? tcb->name : "(null)",
+      (uintptr_t)tcb->start, (uintptr_t)tcb->stack_base_ptr,
+      (uintptr_t)(tcb->stack_base_ptr + tcb->adj_stack_size),
+      (uintptr_t)tcb->stack_alloc_ptr);
+#endif
+
   /* Save the task entry point */
 
   xcp->regs[REG_ERA]     = (uintptr_t)tcb->start;
 
+  syslog(LOG_EMERG, "up_initial_state: wrote ERA=0x%lx for tcb=%p pid=%d name=%s\n",
+      (uintptr_t)tcb->start, tcb, tcb->pid, tcb->name ? tcb->name : "(null)");
+
   /* Setup thread local storage pointer */
 
 #ifdef CONFIG_SCHED_THREAD_LOCAL
-  xcp->regs[REG_TP]      = (uintptr_t)tcb->stack_alloc_ptr +
-                                     sizeof(struct tls_info_s);
+  xcp->regs[REG_TP] = (uintptr_t)tcb->stack_alloc_ptr + sizeof(struct tls_info_s);
 #endif
 
   xcp->regs[REG_CRMD] = __csrrd(LA_CSR_CRMD);
@@ -130,5 +142,10 @@ void up_initial_state(struct tcb_s *tcb)
 
 #ifndef CONFIG_BUILD_FLAT
   tcb->xcp.initregs = tcb->xcp.regs;
+#endif
+
+#if 0
+  sinfo("Task %s initial ERA = 0x%016lx, SP = 0x%016lx, TP = 0x%016lx\n",
+      tcb->name, xcp->regs[REG_ERA], xcp->regs[REG_SP], xcp->regs[REG_TP]);
 #endif
 }

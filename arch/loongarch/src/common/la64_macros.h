@@ -187,7 +187,7 @@
 .endm
 
 .macro	SAVE_SOME
-  move	t0, sp
+  move	  t0, sp
   addi.d  sp, sp, -XCPTCONTEXT_SIZE
   st.d    t0, sp, TP_SP
   st.d    zero, sp, TP_ZERO
@@ -201,7 +201,7 @@
   csrrd   t0, LA_CSR_ECFG
   st.d    t0, sp, TP_ECFG
   csrrd   t0, LA_CSR_ESTAT
-  st.d  t0, sp, TP_ESTAT
+  st.d    t0, sp, TP_ESTAT
 
   st.d  ra, sp, TP_RA
   st.d  a0, sp, TP_A0
@@ -218,15 +218,6 @@
 
   st.d  tp, sp, TP_TP
   st.d  fp, sp, TP_FP
-
-  /* Set thread_info if we're coming from user mode */
-  csrrd t0, LA_CSR_PRMD
-  andi  t0, t0, 0x3 /* extract pplv bit */
-  beqz  t0, 9f
-
-  st.d  u0, sp, TP_U0
-  csrrd u0, LA_CSR_KS3
-9:
 .endm
 
 .macro	SAVE_ALL
@@ -265,7 +256,7 @@
   ld.d  a0, sp, TP_PRMD
   csrwr a0, LA_CSR_PRMD
   ld.d  ra, sp, TP_RA
-  ld.d  a0, sp, TP_A0
+  //ld.d  a0, sp, TP_A0
   ld.d  a1, sp, TP_A1
   ld.d  a2, sp, TP_A2
   ld.d  a3, sp, TP_A3
@@ -276,10 +267,10 @@
   ld.d  tp, sp, TP_TP
   ld.d  fp, sp, TP_FP
 
-  addi.d  tp, sp, XCPTCONTEXT_SIZE
-  csrwr tp, LA_CSR_KS2
+  addi.d  a0, sp, XCPTCONTEXT_SIZE
+  csrwr   a0, LA_CSR_KS2
 
-  ld.d  tp, sp, TP_TP
+  ld.d  a0, sp, TP_A0
 .endm
 
 .macro RESTORE_SP_AND_RET

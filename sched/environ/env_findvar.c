@@ -51,8 +51,7 @@ static bool env_cmpname(const char *pszname, const char *peqname)
 {
   if (pszname == NULL || peqname == NULL)
   {
-    ferr("env_cmpname: NULL param psz=%p, pqe=%p pid=%d tcb=%p\n",
-        pszname, peqname, nxsched_getpid(), this_task());
+    //ferr("env_cmpname: NULL param psz=%p, pqe=%p pid=%d tcb=%p\n", pszname, peqname, nxsched_getpid(), this_task());
     {
       void *bt[10];
       int n = la64_backtrace_reg(bt, &bt);
@@ -117,7 +116,7 @@ ssize_t env_findvar(FAR struct task_group_s *group, FAR const char *pname)
 
   for (i = 0; group->tg_envp[i] != NULL; i++)
   {
-    ferr("env_findvar: i=%zd entry=%p\n", i, (FAR void *)group->tg_envp[i]);
+    //ferr("env_findvar: i=%zd entry=%p\n", i, (FAR void *)group->tg_envp[i]);
     if (env_cmpname(pname, group->tg_envp[i]))
     {
       return i;

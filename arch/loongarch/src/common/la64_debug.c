@@ -64,23 +64,17 @@ static inline uint32_t la64_read_iocsr32(uint32_t addr)
 
 void dump_la_csr_info(void)
 {
-  syslog(LOG_INFO, "  LA_CSR_CRMD: 0x%016" PRIx32 "\n",
-      csr_read32(LA_CSR_CRMD));
-  syslog(LOG_INFO, "  LA_CSR_PRMD: 0x%016" PRIx32 "\n",
-      csr_read32(LA_CSR_PRMD));
-  syslog(LOG_INFO, "  LA_CSR_ECFG: 0x%016" PRIx32 "\n",
-      csr_read32(LA_CSR_ECFG));
-  syslog(LOG_INFO, "  LA_CSR_ESTAT: 0x%016" PRIx32 "\n",
-      csr_read32(LA_CSR_ESTAT));
-  syslog(LOG_INFO, "  LA_CSR_TID: 0x%016" PRIx32 "\n",
-      csr_read32(LA_CSR_TMID));
+  syslog(LOG_INFO, "================ LoongArch CSR info ================\n");
+  syslog(LOG_INFO, "  LA_CSR_CRMD     : 0x%016" PRIx32 "\n", csr_read32(LA_CSR_CRMD));
+  syslog(LOG_INFO, "  LA_CSR_PRMD     : 0x%016" PRIx32 "\n", csr_read32(LA_CSR_PRMD));
+  syslog(LOG_INFO, "  LA_CSR_ECFG     : 0x%016" PRIx32 "\n", csr_read32(LA_CSR_ECFG));
+  syslog(LOG_INFO, "  LA_CSR_ESTAT    : 0x%016" PRIx32 "\n", csr_read32(LA_CSR_ESTAT));
+  syslog(LOG_INFO, "  LA_CSR_TID      : 0x%016" PRIx32 "\n", csr_read32(LA_CSR_TMID));
 
-  syslog(LOG_INFO, "  LA_CSR_EENTRY: 0x%016" PRIxPTR "\n",
-      csr_read64(LA_CSR_EENTRY));
-  syslog(LOG_INFO, "  LA_CSR_TLBRENTRY: 0x%016" PRIxPTR "\n",
-      csr_read64(LA_CSR_TLBRENTRY));
-  syslog(LOG_INFO, "  LA_CSR_MERRENTRY: 0x%016" PRIxPTR "\n",
-      csr_read64(LA_CSR_MERRENTRY));
+  syslog(LOG_INFO, "  LA_CSR_EENTRY   : 0x%016" PRIxPTR "\n", csr_read64(LA_CSR_EENTRY));
+  syslog(LOG_INFO, "  LA_CSR_TLBRENTRY: 0x%016" PRIxPTR "\n", csr_read64(LA_CSR_TLBRENTRY));
+  syslog(LOG_INFO, "  LA_CSR_MERRENTRY: 0x%016" PRIxPTR "\n", csr_read64(LA_CSR_MERRENTRY));
+  syslog(LOG_INFO, "====================================================\n");
 }
 
 /****************************************************************************
@@ -128,13 +122,19 @@ void dump_la_int_info(void)
   uint32_t ext_isr1 = readl(0x16001704);
   uint32_t ext_isr2 = readl(0x16001708);
   uint32_t ext_isr3 = readl(0x1600170c);
+  uint32_t ext_core_isr0 = readl(0x16001800);
+  uint32_t ext_core_isr1 = readl(0x16001804);
+  uint32_t ext_core_isr2 = readl(0x16001808);
+  uint32_t ext_core_isr3 = readl(0x1600180c);
 
   syslog(LOG_INFO, "  ExtIOI_BIT19 (Extern Mode) : 0x%08x\n", ext_b19);
   syslog(LOG_INFO, "  ExtIOI_MAP   (Map Core IP) : 0x%08x\n", ext_map);
-  syslog(LOG_INFO, "  ExtIOI_EN    (EN0 ~ EN3)   : 0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
+  syslog(LOG_INFO, "  ExtIOI_EN    (0 ~ 3)       : 0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
       ext_en0, ext_en1, ext_en2, ext_en3);
-  syslog(LOG_INFO, "  ExtIOI_ISR0  (IRS0 ~ ISR3) : 0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
+  syslog(LOG_INFO, "  ExtIOI_ISR0  (0 ~ 3)       : 0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
       ext_isr0, ext_isr1, ext_isr2, ext_isr3);
+  syslog(LOG_INFO, "  ExtIOI_CORE_ISR0  (0 ~ 3)  : 0x%08x, 0x%08x, 0x%08x, 0x%08x\n",
+      ext_core_isr0, ext_core_isr1, ext_core_isr2, ext_core_isr3);
 
   syslog(LOG_INFO, "=================================================================\n\n");
 }

@@ -98,8 +98,8 @@ void loongarch_mem_verify(void)
   syslog(LOG_INFO, "  Kernel Total    : %zu KB\n", kernel_size / 1024);
   syslog(LOG_INFO, "  -----------------------------------------------------\n");
   syslog(LOG_INFO, "  IDLE Stack Base : 0x%016" PRIxPTR "\n", ebss_addr);
-  syslog(LOG_INFO, "  g_idle_topstack : 0x%016" PRIxPTR " (Size: %zu bytes)\n",
-         idle_top, idle_stack_size);
+  syslog(LOG_INFO, "  g_idle_topstack : 0x%016" PRIxPTR " (Size: %zu bytes)\n", idle_top, idle_stack_size);
+  syslog(LOG_INFO, "  g_intstackalloc : 0x%016" PRIxPTR " 0x%016" PRIxPTR "\n", g_intstackalloc, g_intstacktop);
   syslog(LOG_INFO, "  -----------------------------------------------------\n");
   syslog(LOG_INFO, "  System Heap Base: 0x%016" PRIxPTR "\n", idle_top);
   syslog(LOG_INFO, "  RAM End         : 0x%016" PRIxPTR "\n", ram_end);

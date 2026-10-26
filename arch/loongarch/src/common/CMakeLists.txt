@@ -43,6 +43,6 @@ list(APPEND SRCS la64_sigdeliver.c la64_schedulesigaction.c)
 list(APPEND SRCS la64_allocateheap.c )
 list(APPEND SRCS la64_stable_timer.c)
 
-list(APPEND SRCS la64_debug.c la64_backtrace.c)
+list(APPEND SRCS la64_debug.c la64_backtrace.c la64_checkstack.c)
 
 target_sources(arch PRIVATE ${SRCS})

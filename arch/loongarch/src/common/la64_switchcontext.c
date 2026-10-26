@@ -59,11 +59,17 @@
 
 void up_switch_context(struct tcb_s *tcb, struct tcb_s *rtcb)
 {
-  //syslog(LOG_EMERG, "Switching context: from TCB %p to TCB %p (entry: 0x%lx)\r\n", rtcb, tcb, tcb->start);
+#if 0
+  syslog(LOG_EMERG, "up_switch_context: from=%p to=%p tcb->start=0x%lx to_sp=0x%lx to_tp=0x%lx era=0x%lx prmd=0x%lx \n",
+      rtcb, tcb, tcb->start,
+      tcb->xcp.regs ? tcb->xcp.regs[REG_SP] : 0,
+      tcb->xcp.regs ? tcb->xcp.regs[REG_TP] : 0,
+      tcb->xcp.regs[REG_ERA], tcb->xcp.regs[REG_PRMD]);
+#endif
 
-    if (!up_interrupt_context())
-    {
-      la64_switchcontext(); \
-    }
-    UNUSED(rtcb);
+  if (!up_interrupt_context())
+  {
+    la64_switchcontext(); \
+  }
+  UNUSED(rtcb);
 }

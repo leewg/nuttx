@@ -432,8 +432,10 @@ static inline_function uintptr_t up_getsp(void)
   register uintptr_t sp;
   __asm__ __volatile__
       (
-       "move %0, sp\n"
+       "move %0, $sp\n"
        : "=r"(sp)
+       :
+       : "memory"
        );
 
   return sp;

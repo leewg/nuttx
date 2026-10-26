@@ -118,8 +118,9 @@ void up_disable_irq(int irq)
 
   if (irq > LA_LOC_IRQ_BASE && irq < LA_LOC_IRQ_BASE + 16)
   {
+    uint32_t bit = (uint32_t)(irq - LA_LOC_IRQ_BASE);
     val = read_csr_ecfg();
-    val &= ~(0x1 << irq);
+    val &= ~(0x1 << bit);
     write_csr_ecfg(val);
   } else if (irq >= LA_EXT_IRQ_BASE && irq < LA_EXT_IRQ_BASE + 128){
     extirq = irq - LA_EXT_IRQ_BASE;
@@ -147,8 +148,9 @@ void up_enable_irq(int irq)
 
   if (irq > LA_LOC_IRQ_BASE && irq < LA_LOC_IRQ_BASE + 16)
   {
+    uint32_t bit = (uint32_t)(irq - LA_LOC_IRQ_BASE);
     val = read_csr_ecfg();
-    val |= (0x1 << irq);
+    val |= (0x1 << bit);
     write_csr_ecfg(val);
   } else if (irq >= LA_EXT_IRQ_BASE && irq < LA_EXT_IRQ_BASE + 128){
     extirq = irq - LA_EXT_IRQ_BASE;

@@ -97,7 +97,7 @@ uint64_t dispatch_syscall(uint64_t arg0, uint64_t arg1, uint64_t arg2, uint64_t 
   syslog(LOG_EMERG, "a6 = 0x%016lx, a7 = 0x%016lx,\n", context, a7);
 #endif
 
-    syslog(LOG_EMERG, "dispatch_syscall: ESTAT = 0x%016lx, nbr = %d\n", csr_read32(LA_CSR_ESTAT), nbr);
+    syslog(LOG_EMERG, "dispatch_syscall: ESTAT = 0x%08x, nbr = %ld\n", csr_read32(LA_CSR_ESTAT), nbr);
 
     /* Valid system call ? */
     if (a7 > SYS_maxsyscall)
@@ -149,9 +149,8 @@ uint64_t *la64_syscall(uint64_t *regs)
 
   up_set_interrupt_context(true);
 
-  //syslog(LOG_EMERG, "la64_syscall: regs: %p cmd: %d\n", regs, regs[REG_A7]);
 #ifdef CONFIG_DEBUG_SYSCALL_INFO
-  syslog(LOG_EMERG, "Entry: regs: %p cmd: %d\n", regs, regs[REG_A7]);
+  syslog(LOG_EMERG, "Entry: regs: %p cmd: %ld\n", regs, regs[REG_A7]);
 #endif
 
   if (nbr != SYS_restore_context)
@@ -191,6 +190,10 @@ uint64_t *la64_syscall(uint64_t *regs)
 
   regs = tcb->xcp.regs;
   DEBUGASSERT(regs != NULL);
+#if 0
+  syslog(LOG_EMERG, "switch-return: running_task=%p tcb=%p regs=%p era=0x%lx sp=0x%lx tp=0x%lx ra=0x%lx a0=0x%lx a7=0x%lx\n",
+      *running_task, tcb, regs, regs[REG_ERA], regs[REG_SP], regs[REG_TP], regs[REG_RA], regs[REG_A0], regs[REG_A7]);
+#endif
 
   (*running_task)->xcp.regs = NULL;
 

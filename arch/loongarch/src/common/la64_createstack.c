@@ -214,14 +214,14 @@ int up_create_stack(struct tcb_s *tcb, size_t stack_size, uint8_t ttype)
 #ifdef CONFIG_STACK_COLORATION
 void la64_stack_color(void *stackbase, size_t nbytes)
 {
-  uint32_t *stkptr;
+  uintptr_t *stkptr;
   uintptr_t stkend;
   size_t    nwords;
   uintptr_t sp;
 
   /* Take extra care that we do not write outside the stack boundaries */
 
-  stkptr = (uint32_t *)STACKFRAME_ALIGN_UP((uintptr_t)stackbase);
+  stkptr = (uintptr_t *)STACKFRAME_ALIGN_UP((uintptr_t)stackbase);
 
   if (nbytes == 0) /* 0: colorize the running stack */
     {
