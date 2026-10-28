@@ -93,7 +93,7 @@ static void configure_exception_vector(void)
   tlbrentry = (unsigned long)exception_handlers + 80*VECSIZE;
 
   csr_write64(eentry, LA_CSR_EENTRY);
-  csr_write64(eentry, LA_CSR_MERRENTRY);
+  csr_write64(eentry + (81 * VECSIZE), LA_CSR_MERRENTRY);
   csr_write64(tlbrentry, LA_CSR_TLBRENTRY);
 }
 
@@ -180,7 +180,7 @@ void trap_init(void)
   for (i = EXCCODE_INT_START; i < EXCCODE_INT_END; i++)
     set_handler(i * VECSIZE, handle_vint, VECSIZE);
 
-  set_merr_handler(0x0, &except_vec_cex, VECSIZE);
+  set_merr_handler(81 * VECSIZE, &except_vec_cex, VECSIZE);
 }
 
 /****************************************************************************

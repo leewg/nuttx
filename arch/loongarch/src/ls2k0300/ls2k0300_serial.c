@@ -160,7 +160,7 @@ static void la64_send(struct uart_dev_s *dev, int ch);
 static void la64_txint(struct uart_dev_s *dev, bool enable);
 static bool la64_txready(struct uart_dev_s *dev);
 static bool la64_txempty(struct uart_dev_s *dev);
-//static ssize_t la64_sendbuf(struct uart_dev_s *dev, const void *buf, size_t size);
+static ssize_t la64_sendbuf(struct uart_dev_s *dev, const void *buf, size_t size);
 
 /****************************************************************************
  * Private Data
@@ -183,7 +183,7 @@ static const struct uart_ops_s g_uart_ops =
   .txint          = la64_txint,
   .txready        = la64_txready,
   .txempty        = la64_txempty,
-  .sendbuf        = NULL,
+  .sendbuf        = la64_sendbuf,
 };
 
 /* I/O buffers */
@@ -359,7 +359,8 @@ static int la64_attach(struct uart_dev_s *dev)
       priv->irq, extirq, offs, (ien >> offs) &1);
 
   /* Initialize interrupt generation on the peripheral */
-  priv->im = UART_IER_IRxE | UART_IER_ITxE;
+  priv->im = 0x0;
+  //priv->im = UART_IER_IRxE | UART_IER_ITxE;
   la64_serialout(priv, LA_UART_IER, priv->im);
 
 
@@ -589,6 +590,7 @@ static bool la64_rxavailable(struct uart_dev_s *dev)
 static void la64_send(struct uart_dev_s *dev, int ch)
 {
   struct up_dev_s *priv = (struct up_dev_s *)dev->priv;
+  while (!la64_txready(dev));
   la64_serialout(priv, LA_UART_THR, (uint8_t)(ch&0xff));
 }
 
@@ -600,7 +602,6 @@ static void la64_send(struct uart_dev_s *dev, int ch)
  *
  ****************************************************************************/
 
-#if 0
 static ssize_t la64_sendbuf(struct uart_dev_s *dev,
     const void *buf, size_t size)
 {
@@ -615,7 +616,6 @@ static ssize_t la64_sendbuf(struct uart_dev_s *dev,
 
   return (ssize_t)size;
 }
-#endif
 
 /****************************************************************************
  * Name: la64_txint
@@ -649,14 +649,12 @@ static void la64_txint(struct uart_dev_s *dev, bool enable)
     /* Fake a TX interrupt here by just calling uart_xmitchars() with
      * interrupts disabled(note this may recurese).
      */
-    if (dev->xmit.head != dev->xmit.tail)
+#if 0
+    if (la64_txready(dev) && dev->xmit.head != dev->xmit.tail)
     {
-      int timeout = 10000;
-
-      //_info("UART head != tail\n");
-      while (!la64_txready(dev) && --timeout > 0);
       uart_xmitchars(dev);
     }
+#endif
 #endif
   } else {
     flags = enter_critical_section();
@@ -774,8 +772,12 @@ void up_putc(int ch)
 
 void la64_lowputc(char ch)
 {
+  irqstate_t flags;
+
+  flags = enter_critical_section();
   while ((readb(UART0_BASE + LA_UART_LSR) & UART_LSR_TFE) == 0);
   writeb(ch, UART0_BASE + LA_UART_THR);
+  leave_critical_section(flags);
 }
 
 void la64_lowsetup(void)

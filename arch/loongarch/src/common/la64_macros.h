@@ -256,7 +256,7 @@
   ld.d  a0, sp, TP_PRMD
   csrwr a0, LA_CSR_PRMD
   ld.d  ra, sp, TP_RA
-  //ld.d  a0, sp, TP_A0
+  ld.d  a0, sp, TP_A0
   ld.d  a1, sp, TP_A1
   ld.d  a2, sp, TP_A2
   ld.d  a3, sp, TP_A3
@@ -266,11 +266,6 @@
   ld.d  a7, sp, TP_A7
   ld.d  tp, sp, TP_TP
   ld.d  fp, sp, TP_FP
-
-  addi.d  a0, sp, XCPTCONTEXT_SIZE
-  csrwr   a0, LA_CSR_KS2
-
-  ld.d  a0, sp, TP_A0
 .endm
 
 .macro RESTORE_SP_AND_RET
