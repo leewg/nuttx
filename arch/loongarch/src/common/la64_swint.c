@@ -143,9 +143,9 @@ uint64_t *la64_syscall(uint64_t *regs)
   int cpu = this_cpu();
   struct tcb_s **running_task = &g_running_tasks[cpu];
   struct tcb_s *tcb = this_task();
-  uint64_t nbr = regs[REG_A7];
+  uint64_t nbr;
 
-  DEBUGASSERT(regs);
+  DEBUGASSERT(regs != NULL);
 
   up_set_interrupt_context(true);
 
@@ -153,6 +153,7 @@ uint64_t *la64_syscall(uint64_t *regs)
   syslog(LOG_EMERG, "Entry: regs: %p cmd: %ld\n", regs, regs[REG_A7]);
 #endif
 
+  nbr = regs[REG_A7];
   if (nbr != SYS_restore_context)
   {
     regs[REG_ERA] += 4;
@@ -189,7 +190,6 @@ uint64_t *la64_syscall(uint64_t *regs)
     }
 
   regs = tcb->xcp.regs;
-  DEBUGASSERT(regs != NULL);
 #if 0
   syslog(LOG_EMERG, "switch-return: running_task=%p tcb=%p regs=%p era=0x%lx sp=0x%lx tp=0x%lx ra=0x%lx a0=0x%lx a7=0x%lx\n",
       *running_task, tcb, regs, regs[REG_ERA], regs[REG_SP], regs[REG_TP], regs[REG_RA], regs[REG_A0], regs[REG_A7]);
@@ -222,7 +222,7 @@ uint64_t *la64_syscall_handler(uint64_t *regs)
   uint64_t ret;
   uint32_t nbr = (uint32_t)regs[REG_A7];
 
-  if (nbr == SYS_switch_context || nbr == SYS_restore_context)
+  if (nbr < CONFIG_SYS_RESERVED)
   {
     return la64_syscall(regs);
   }

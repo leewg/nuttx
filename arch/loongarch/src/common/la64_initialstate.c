@@ -128,8 +128,10 @@ void up_initial_state(struct tcb_s *tcb)
 
   xcp->regs[REG_ERA]     = (uintptr_t)tcb->start;
 
+#if 0
   syslog(LOG_EMERG, "up_initial_state: wrote ERA=0x%lx for tcb=%p pid=%d name=%s\n",
       (uintptr_t)tcb->start, tcb, tcb->pid, tcb->name ? tcb->name : "(null)");
+#endif
 
   /* Setup thread local storage pointer */
 
@@ -137,7 +139,21 @@ void up_initial_state(struct tcb_s *tcb)
   xcp->regs[REG_TP] = (uintptr_t)tcb->stack_alloc_ptr + sizeof(struct tls_info_s);
 #endif
 
-  xcp->regs[REG_CRMD] = __csrrd(LA_CSR_CRMD);
+#ifdef CONFIG_BUILD_KERNEL
+  if ((tcb->flags & TCB_FLAG_TTYPE_MASK) == TCB_FLAG_TTYPE_USER)
+  {
+    /* user task: after ertn, enter PLV3 */
+    xcp->regs[REG_CRMD] = CSR_CRMD_IE | CSR_CRMD_PLV_USER;
+  }
+  else
+  {
+    /* user task: after ertn, enter PLV0 */
+    xcp->regs[REG_CRMD] = CSR_CRMD_IE | CSR_CRMD_PLV_KERNEL;
+  }
+#else
+  /* Flat/Protected mode, enter PLV0 */
+  xcp->regs[REG_CRMD] = CSR_CRMD_IE | CSR_CRMD_PLV_KERNEL;
+#endif
   xcp->regs[REG_PRMD] = CSR_PRMD_PIE;
 
 #ifndef CONFIG_BUILD_FLAT

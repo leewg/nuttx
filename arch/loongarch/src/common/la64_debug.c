@@ -12,30 +12,7 @@
 #include "la64_internal.h"
 
 /****************************************************************************
- * 1. LoongArch CSR 寄存器及位域定义
- ****************************************************************************/
-
-/* CRMD.IE: 全局中断使能位 (Bit 2) */
-#define CRMD_IE_SHIFT            2
-#define CRMD_IE_MASK             (1U << CRMD_IE_SHIFT)
-
-/* ECFG.IM: 局部中断屏蔽位 (Bits 12:0, 共13个中断源) */
-#define ECFG_IM_SHIFT            0
-#define ECFG_IM_MASK             (0x1fffU << ECFG_IM_SHIFT)
-
-/* ESTAT.IS: 软硬件中断状态悬挂位 (Bits 12:0) */
-#define ESTAT_IS_SHIFT           0
-#define ESTAT_IS_MASK            (0x1fffU << ESTAT_IS_SHIFT)
-
-/****************************************************************************
- * 2. ExtIOI 扩展中断控制器 (IOCSR 空间) 地址定义
- ****************************************************************************/
-
-#define IOCSR_EXTIOI_EN_BASE     0x1600  /* 中断使能寄存器基址 (0-31 号中断) */
-#define IOCSR_EXTIOI_ISR_BASE    0x1800  /* 中断状态寄存器基址 (0-31 号中断) */
-
-/****************************************************************************
- * 3. 硬件底层访问内联函数
+ * 硬件底层访问内联函数
  ****************************************************************************/
 
 /* 读取 CSR 寄存器 (64位) */
@@ -93,9 +70,9 @@ void dump_la_int_info(void)
   estat = csr_read32(LA_CSR_ESTAT);
 
   /* 2. 解析核心位域 */
-  crmd_ie  = (crmd & CRMD_IE_MASK) >> CRMD_IE_SHIFT;
-  ecfg_im  = (ecfg & ECFG_IM_MASK) >> ECFG_IM_SHIFT;
-  estat_is = (estat & ESTAT_IS_MASK) >> ESTAT_IS_SHIFT;
+  crmd_ie  = (crmd & CSR_CRMD_IE) >> CSR_CRMD_IE_SHIFT;
+  ecfg_im  = (ecfg & CSR_ECFG_IM) >> CSR_ECFG_IM_SHIFT;
+  estat_is = (estat & CSR_ESTAT_IS) >> CSR_ESTAT_IS_SHIFT;
 
   syslog(LOG_INFO, "\n================ LoongArch Interrupt Status Dump ================\n");
 

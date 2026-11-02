@@ -58,7 +58,7 @@ void up_irqinitialize(void)
 
   /* mask all INT */
   val = read_csr_ecfg();
-  val &= ~0x1fff;
+  val &= ~CSR_ECFG_IM;
   write_csr_ecfg(val);
 
   for (i = 0; i < 4; i++)
@@ -81,7 +81,7 @@ void up_irqinitialize(void)
 
   /* enable all INT */
   val = read_csr_ecfg();
-  val |= 0x1fff;
+  val |= CSR_ECFG_IM;
   write_csr_ecfg(val);
 
   /* Colorize the interrupt stack for debug purposes */

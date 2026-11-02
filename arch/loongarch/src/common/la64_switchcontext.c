@@ -66,6 +66,13 @@ void up_switch_context(struct tcb_s *tcb, struct tcb_s *rtcb)
       tcb->xcp.regs ? tcb->xcp.regs[REG_TP] : 0,
       tcb->xcp.regs[REG_ERA], tcb->xcp.regs[REG_PRMD]);
 #endif
+#ifdef CONFIG_ARCH_KERNEL_STACK
+  /*
+   * user thread,   KS2 = xcp.ktopsk (thread's kernel stack to KS2)
+   * kernel thread, KS2 = 0
+   */
+  __dcsrwr(tcb->xcp.ktopstk ? (uint64_t)tcb->xcp.ktopstk : 0, LA_CSR_KS2);
+#endif
 
   if (!up_interrupt_context())
   {

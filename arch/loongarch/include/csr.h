@@ -63,10 +63,8 @@
 #define  CSR_CRMD_PLV_SHIFT		0
 #define  CSR_CRMD_PLV_WIDTH		2
 #define  CSR_CRMD_PLV			(_ULCAST_(0x3) << CSR_CRMD_PLV_SHIFT)
-
-#define PLV_KERN			0
-#define PLV_USER			3
-#define PLV_MASK			0x3
+#define  CSR_CRMD_PLV_KERNEL (_ULCAST_(0x0) << CSR_CRMD_PLV_SHIFT)
+#define  CSR_CRMD_PLV_USER   (_ULCAST_(0x3) << CSR_CRMD_PLV_SHIFT)
 
 #define LA_CSR_PRMD        0x1   /* Pre-exception Mode Information */
 #define  CSR_PRMD_PWE_SHIFT		3
@@ -76,6 +74,8 @@
 #define  CSR_PRMD_PPLV_SHIFT		0
 #define  CSR_PRMD_PPLV_WIDTH		2
 #define  CSR_PRMD_PPLV			(_ULCAST_(0x3) << CSR_PRMD_PPLV_SHIFT)
+#define  CSR_PRMD_PPLV_KERNEL (_ULCAST_(0x0) << CSR_PRMD_PPLV_SHIFT)
+#define  CSR_PRMD_PPLV_USER   (_ULCAST_(0x3) << CSR_PRMD_PPLV_SHIFT)
 
 #define LA_CSR_EUEN        0x2   /* Extended Unit Enable */
 #define  CSR_EUEN_LBTEN_SHIFT		3

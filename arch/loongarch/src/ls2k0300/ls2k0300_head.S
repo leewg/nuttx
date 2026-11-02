@@ -172,6 +172,9 @@ _start:
   /* disable tick interrupt */
   csrwr zero, LA_CSR_TCFG
 
+  csrwr zero, LA_CSR_KS2
+  csrwr zero, LA_CSR_KS4
+
   /* disable all device interrupts */
   li.d  t5, TO_UNCAC(0x16001400)
   li.w  t6, 0xffffffff

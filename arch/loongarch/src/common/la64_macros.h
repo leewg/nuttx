@@ -93,7 +93,7 @@
   st.d      t8, sp, TP_FCC6
   movcf2gr  t8, fcc7
   st.d      t8, sp, TP_FCC7
-  movfcsr2gr  t8, r0
+  movfcsr2gr  t8, fcsr0
   st.d      t8, sp, TP_FCSR0
 .endm
 
@@ -130,27 +130,38 @@
   fld.d f29, sp, TP_F29
   fld.d f30, sp, TP_F30
   fld.d f31, sp, TP_F31
-  ld.d  u0, sp, TP_FCC0
-  movgr2fr  fcc0, u0
-  ld.d  u0, sp, TP_FCC1
-  movgr2fr  fcc1, u0
-  ld.d  u0, sp, TP_FCC2
-  movgr2fr  fcc2, u0
-  ld.d  u0, sp, TP_FCC3
-  movgr2fr  fcc3, u0
-  ld.d  u0, sp, TP_FCC4
-  movgr2fr  fcc4, u0
-  ld.d  u0, sp, TP_FCC5
-  movgr2fr  fcc5, u0
-  ld.d  u0, sp, TP_FCC6
-  movgr2fr  fcc6, u0
-  ld.d  u0, sp, TP_FCC7
-  movgr2fr  fcc7, u0
-  ld.d  u0, sp, TP_FCSR0
-  movgr2fr  r0, u0
+  ld.d  t8, sp, TP_FCC0
+  movgr2fr  fcc0, t8
+  ld.d  t8, sp, TP_FCC1
+  movgr2fr  fcc1, t8
+  ld.d  t8, sp, TP_FCC2
+  movgr2fr  fcc2, t8
+  ld.d  t8, sp, TP_FCC3
+  movgr2fr  fcc3, t8
+  ld.d  t8, sp, TP_FCC4
+  movgr2fr  fcc4, t8
+  ld.d  t8, sp, TP_FCC5
+  movgr2fr  fcc5, t8
+  ld.d  t8, sp, TP_FCC6
+  movgr2fr  fcc6, t8
+  ld.d  t8, sp, TP_FCC7
+  movgr2fr  fcc7, t8
+  ld.d  t8, sp, TP_FCSR0
+  movgr2fr  fcsr0, t8
 .endm
 #endif  // #if CONFIG_ARCH_FPU
 
+/*
+ * BACKUP/RELOAD T0T1 Paring Contract:
+ * - Each exception entry(VEC/MERR/TLB) must call BACKUP_T0T1 exactly once
+ * - RELOAD_T0T1 is only called for SAVE_TEMP and TLB/MERR fast return paths.
+ * - If BACKUP_T0T1 is called again inside the handler, a second swap will occur, overwriting the correct backup err.
+ *
+ * The following 3 instances of temporaty use of t0/1/8 are harmless and should not be "fixed casually":
+ *  - .L_from_kernel_path of SAVE_SOME uses t1, SAVE_TEMP will be restored later.
+ *  - RESTORE_ALL_AND_RET uses t0(PRMD) and t1(KS2), RESTORE_TEMP is restored from the stack.
+ *  - SAVE_FPU/RESTORE_FPU uses t8, SAVE/RESTORE_TEMP round trip is consisten.
+ */
 .macro BACKUP_T0T1
   csrwr	t0, LA_CSR_KS0
   csrwr	t1, LA_CSR_KS1

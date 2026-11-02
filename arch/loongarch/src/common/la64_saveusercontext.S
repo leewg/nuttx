@@ -75,7 +75,7 @@ up_saveusercontext:
   st.d    $r19, $r4, TP_T7    /* $t7 */
   st.d    $r20, $r4, TP_T8    /* $t8 */
 
-  st.d    $r21, $r4, TP_U0
+  //st.d    $r21, $r4, TP_U0
   st.d    $r22, $r4, TP_FP    /* $fp / $s9 */
   st.d    $r23, $r4, TP_S0    /* $s0 */
   st.d    $r24, $r4, TP_S1    /* $s1 */
@@ -88,13 +88,17 @@ up_saveusercontext:
   st.d    $r31, $r4, TP_S8    /* $s8 */
 
   csrrd   t0, LA_CSR_ERA
-  st.d    t0,  $r4, TP_ERA
-
-  csrrd   t0, LA_CSR_BADV
-  st.d    t0, $r4, TP_BADV          /* BADV */
-
+  st.d    t0, $r4, TP_ERA
   csrrd   t0, LA_CSR_PRMD
-  st.d    t0, $r4, TP_PRMD    /* PRMD */
+  st.d    t0, $r4, TP_PRMD
+  csrrd   t0, LA_CSR_CRMD
+  st.d    t0, $r4, TP_CRMD
+  csrrd   t0, LA_CSR_EUEN
+  st.d    t0, $r4, TP_EUEN
+  csrrd   t0, LA_CSR_ECFG
+  st.d    t0, $r4, TP_ECFG
+  csrrd   t0, LA_CSR_ESTAT
+  st.d    t0, $r4, TP_ESTAT
 
   move    $r4,  zero
   jirl    $r0, $r1, 0
