@@ -198,9 +198,36 @@
 .endm
 
 .macro	SAVE_SOME
-  move	  t0, sp
+  csrrd   t0, LA_CSR_PRMD
+  andi    t0, t0, CSR_PRMD_PPLV
+  beqz    t0, .L_from_kernel_\@
+
+  /* trap from user (PPLV=3) */
+#ifdef CONFIG_ARCH_KERNEL_STACK
+  /*
+   *  csrwr swap: sp <-- kernel sp top, KS2 <-- user_sp
+   *  Allocate exception frames on the kernel stack;
+   *  xcp.regs points to the kernel stack (independent for each task).
+   */
+  csrwr   sp, LA_CSR_KS2
   addi.d  sp, sp, -XCPTCONTEXT_SIZE
-  st.d    t0, sp, TP_SP
+  csrrd   t1, LA_CSR_KS2  /* t1 = user sp */
+  st.d    t1, sp, TP_SP
+#else
+  /* no kernel stack, alloc on flat mode */
+  move	  t1, sp
+  addi.d  sp, sp, -XCPTCONTEXT_SIZE
+  st.d    t1, sp, TP_SP
+#endif
+  b       .L_save_ctx_rest_\@
+
+  /* trap from kernel (PPLV=0) */
+.L_from_kernel_\@:
+  move    t1, sp
+  addi.d  sp, sp, -XCPTCONTEXT_SIZE
+  st.d    t1, sp, TP_SP
+
+.L_save_ctx_rest_\@:
   st.d    zero, sp, TP_ZERO
 
   csrrd   t0, LA_CSR_PRMD
@@ -288,7 +315,30 @@
   RESTORE_STATIC
   RESTORE_TEMP
   RESTORE_SOME
+#ifdef CONFIG_ARCH_KERNEL_STACK
+  ld.d  t0, sp, TP_PRMD
+  andi  t0, t0, CSR_PRMD_PPLV
+  beqz  t0, .L_ret_kernel_\@
+
+  /* while user trap, stack frame = kernel_top - XCPTCONTEXT_SIZE,
+   * therefore, kernel_top = sp + XCPTCONTEXT_SIZE */
+  addi.d  t1, sp, XCPTCONTEXT_SIZE
+  csrwr   t1, LA_CSR_KS2
+
+.L_ret_kernel_\@:
+#endif
   RESTORE_SP_AND_RET
+.endm
+
+.macro ENTER_INT_STACK
+#if defined(CONFIG_ARCH_INTERRUPTSTACK) && CONFIG_ARCH_INTERRUPTSTACK > 15
+  csrrd   t0, LA_CSR_CPUID
+  andi    t0, t0, 0x1ff
+  la.abs  t2, g_intstacktop
+  li.d    t3, INT_STACK_SIZE
+  mul.d   t0, t0, t3
+  sub.d   sp, t2, t0
+#endif
 .endm
 
 /* For thread context */

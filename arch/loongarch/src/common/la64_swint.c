@@ -217,7 +217,7 @@ uint64_t *la64_syscall(uint64_t *regs)
   return regs;
 }
 
-uint64_t *la64_syscall_handler(uint64_t *regs)
+uint64_t *do_syscall(uint64_t *regs)
 {
   uint64_t ret;
   uint32_t nbr = (uint32_t)regs[REG_A7];

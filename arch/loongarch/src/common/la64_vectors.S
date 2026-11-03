@@ -164,12 +164,37 @@ SYM_FUNC_START(handle_vint)
   BACKUP_T0T1
   SAVE_ALL
   move a0, sp
+  ENTER_INT_STACK
   la.abs t0, do_vint
   jirl  ra, t0, 0
-  /* a0/v0 返回可能发生任务切换后的新上下文指针 */
+
   move sp, a0
   RESTORE_ALL_AND_RET
 SYM_FUNC_END(handle_vint)
+
+SYM_FUNC_START(handle_sys)
+  BACKUP_T0T1
+  SAVE_ALL
+
+  move  a0, sp    /* a0 = regs */
+  ENTER_INT_STACK
+  la.abs  t0, do_syscall
+  jirl  ra, t0, 0
+
+  move  sp, a0
+  RESTORE_ALL_AND_RET
+SYM_FUNC_END(handle_sys)
+
+SYM_FUNC_START(handle_tlb_refill)
+  csrwr t0, LA_CSR_TLBRSAVE
+  csrrd t0, LA_CSR_PGD
+  lddir t0, t0, 3
+  ldpte t0, 0
+  ldpte t0, 1
+  tlbfill
+  csrrd t0, LA_CSR_TLBRSAVE
+  ertn
+SYM_FUNC_END(handle_tlb_refill)
 
 SYM_FUNC_START(except_vec_cex)
   b cache_parity_error
@@ -194,6 +219,7 @@ SYM_FUNC_END(except_vec_cex)
   SAVE_ALL
   build_prep_\prep
   move a0, sp
+  ENTER_INT_STACK
   la.abs  t0, do_\handler
   jirl  ra, t0, 0
   move sp, a0
@@ -212,37 +238,6 @@ SYM_FUNC_END(except_vec_cex)
   BUILD_HANDLER ri ri none
   BUILD_HANDLER watch watch none
   BUILD_HANDLER reserved reserved none
-
-SYM_FUNC_START(handle_sys)
-  la.abs  t0, handle_syscall
-  jirl  zero, t0, 0
-SYM_FUNC_END(handle_sys)
-
-SYM_FUNC_START(handle_syscall)
-  BACKUP_T0T1
-  SAVE_ALL
-
-  move  a0, sp    /* a0 = regs */
-  bl      la64_syscall_handler
-  //bl    la64_syscall
-  move  sp, a0
-
-  RESTORE_ALL_AND_RET
-SYM_FUNC_END(handle_syscall)
-
-SYM_FUNC_START(handle_tlb_refill)
-  csrwr t0, LA_CSR_TLBRSAVE
-  csrrd t0, LA_CSR_PGD
-  lddir t0, t0, 3
-//#if CONFIG_PGTABLE_LEVELS > 2
- // lddir t0, t0, 1
-//#endif
-  ldpte t0, 0
-  ldpte t0, 1
-  tlbfill
-  csrrd t0, LA_CSR_TLBRSAVE
-  ertn
-SYM_FUNC_END(handle_tlb_refill)
 
 /****************************************************************************
  * Data Section (Interrupt Stack Space)
